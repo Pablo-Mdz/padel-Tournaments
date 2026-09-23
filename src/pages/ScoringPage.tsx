@@ -28,7 +28,7 @@ export default function ScoringPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <RoundBar state={state} round={round} setRound={setRound} />
+      <RoundBar key={round} state={state} round={round} setRound={setRound} />
 
       {openDuel ? (
         <DuelView
@@ -64,42 +64,57 @@ function RoundBar({
 }) {
   const closed = state.roundClosed[round - 1];
   const openDuels = duelsOfRound(state, round).filter((d) => !d.closed).length;
+  const [confirming, setConfirming] = useState(false);
 
   const closeRound = () => {
-    let msg = t.scoring.confirmCloseRound(round, openDuels);
-    if (round === 2) msg += `\n\n${t.scoring.confirmCloseRound2Extra}`;
-    if (!window.confirm(msg)) return;
     dispatch({ type: "closeRound", round });
+    setConfirming(false);
     if (round < 3) setRound((round + 1) as RoundNo);
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-1 gap-2">
-        {ROUNDS.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRound(r)}
-            className={`btn flex-1 whitespace-nowrap px-2 text-base sm:flex-none sm:px-6 sm:text-xl ${
-              r === round ? "bg-brand text-navy" : "bg-surface text-white ring-1 ring-white/15"
-            }`}
-          >
-            {t.round(r)}
-            {state.roundClosed[r - 1] && <span aria-label={t.scoring.roundClosed}>✓</span>}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-1 gap-2">
+          {ROUNDS.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRound(r)}
+              className={`btn flex-1 whitespace-nowrap px-2 text-base sm:flex-none sm:px-6 sm:text-xl ${
+                r === round ? "bg-brand text-navy" : "bg-surface text-white ring-1 ring-white/15"
+              }`}
+            >
+              {t.round(r)}
+              {state.roundClosed[r - 1] && <span aria-label={t.scoring.roundClosed}>✓</span>}
+            </button>
+          ))}
+        </div>
+        <div className="subline hidden text-sm md:block">
+          {state.settings.matchMinutes[round - 1]} min · {closed ? t.scoring.roundClosed : ""}
+        </div>
+        {closed ? (
+          <button className="btn-secondary" onClick={() => dispatch({ type: "reopenRound", round })}>
+            {t.scoring.reopenRound(round)}
           </button>
-        ))}
+        ) : (
+          <button className="btn-accent" onClick={() => setConfirming(true)} disabled={confirming}>
+            {t.scoring.closeRound(round)}
+          </button>
+        )}
       </div>
-      <div className="subline hidden text-sm md:block">
-        {state.settings.matchMinutes[round - 1]} min · {closed ? t.scoring.roundClosed : ""}
-      </div>
-      {closed ? (
-        <button className="btn-secondary" onClick={() => dispatch({ type: "reopenRound", round })}>
-          {t.scoring.reopenRound(round)}
-        </button>
-      ) : (
-        <button className="btn-accent" onClick={closeRound}>
-          {t.scoring.closeRound(round)}
-        </button>
+      {confirming && !closed && (
+        <div className="card flex flex-wrap items-center gap-3 p-3 ring-2 ring-accent">
+          <p className="mr-auto font-semibold">
+            {t.scoring.confirmCloseRound(round, openDuels)}
+            {round === 2 && <span className="block text-sm text-accent">{t.scoring.confirmCloseRound2Extra}</span>}
+          </p>
+          <button className="btn-secondary" onClick={() => setConfirming(false)}>
+            {t.cancel}
+          </button>
+          <button className="btn-accent" onClick={closeRound}>
+            {t.scoring.closeRound(round)}
+          </button>
+        </div>
       )}
     </div>
   );

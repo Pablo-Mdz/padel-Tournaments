@@ -61,7 +61,7 @@ export default function App() {
             ))}
             <a
               href={hrefFor("display")}
-              target="_blank"
+              target={import.meta.env.VITE_HASH_ROUTER === "1" ? undefined : "_blank"}
               rel="noreferrer"
               className="btn hidden whitespace-nowrap bg-white/5 text-accent hover:bg-white/10 sm:inline-flex"
             >

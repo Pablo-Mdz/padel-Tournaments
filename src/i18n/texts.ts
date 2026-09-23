@@ -22,6 +22,7 @@ export const t = {
   team: "Team",
   vs: "vs",
   tbd: "TBD",
+  cancel: "Cancel",
 
   matchTypes: {
     women: "Women",

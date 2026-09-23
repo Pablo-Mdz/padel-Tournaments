@@ -193,14 +193,14 @@ function SettingsSection({ settings }: { settings: Settings }) {
 function BackupSection({ state }: { state: TournamentState }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, setPending] = useState<TournamentState | null>(null);
 
   const onFile = async (file: File) => {
     try {
-      const next = parseState(await file.text());
-      if (!window.confirm(t.setup.importConfirm)) return;
-      dispatch({ type: "import", state: next });
-      setMsg({ ok: true, text: t.setup.importOk });
+      setPending(parseState(await file.text()));
+      setMsg(null);
     } catch {
+      setPending(null);
       setMsg({ ok: false, text: t.setup.importError });
     }
   };
@@ -233,6 +233,24 @@ function BackupSection({ state }: { state: TournamentState }) {
           }}
         />
       </div>
+      {pending && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-navy/60 p-3 ring-2 ring-accent">
+          <p className="mr-auto font-semibold">{t.setup.importConfirm}</p>
+          <button className="btn-secondary" onClick={() => setPending(null)}>
+            {t.cancel}
+          </button>
+          <button
+            className="btn-accent"
+            onClick={() => {
+              dispatch({ type: "import", state: pending });
+              setPending(null);
+              setMsg({ ok: true, text: t.setup.importOk });
+            }}
+          >
+            {t.setup.importJson}
+          </button>
+        </div>
+      )}
       {msg && (
         <p className={`rounded-lg px-3 py-2 font-semibold ${msg.ok ? "bg-emerald-700/60" : "bg-red-700/70"}`}>
           {msg.text}
