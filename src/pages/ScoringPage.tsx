@@ -232,22 +232,11 @@ function DuelView({
   onBack: () => void;
   onCourt: (i: number) => void;
 }) {
-  const running = currentMatchIndex(duel);
-  const [selected, setSelected] = useState(running >= 0 ? running : 3);
-  const [manual, setManual] = useState(duel.walkover != null);
-  const match = duel.matches[selected];
+  const [mode, setMode] = useSessionState<EntryMode>("ui:entryMode", "final");
   const teamA = teamById(state, duel.teamA);
   const teamB = teamById(state, duel.teamB);
   const total = duelTotals(duel);
   const lead = leader(total);
-  const matchLead = leader(match.score);
-  const minutes = state.settings.matchMinutes[duel.round - 1];
-  const ids = { duelId: duel.id, matchIndex: selected };
-
-  const closeMatch = () => {
-    dispatch({ type: "closeMatch", ...ids });
-    if (selected < 3) setSelected(selected + 1);
-  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -289,82 +278,26 @@ function DuelView({
 
       {!teamA || !teamB ? <p className="card p-4 text-center">{t.scoring.noTeams}</p> : null}
 
-      {/* The four matches */}
-      <div className="grid grid-cols-4 gap-2">
-        {duel.matches.map((m, i) => {
-          const status = m.closed ? t.scoring.closed : i === running ? t.scoring.running : t.scoring.upcoming;
-          return (
-            <button
-              key={m.type}
-              onClick={() => setSelected(i)}
-              className={`card flex flex-col items-center px-1 py-2 transition ${
-                i === selected ? "bg-surface ring-4 ring-brand" : m.closed ? "opacity-70" : ""
-              } ${i === running && i !== selected ? "ring-2 ring-accent" : ""}`}
-            >
-              <span className="font-cond text-base font-bold uppercase text-brand sm:text-xl">
-                {t.matchTypes[m.type]}
-              </span>
-              <span className="score text-2xl sm:text-3xl">
-                {m.score.a}:{m.score.b}
-              </span>
-              <span
-                className={`text-[11px] font-semibold uppercase tracking-wide sm:text-xs ${
-                  i === running ? "text-accent" : "text-white/60"
-                }`}
-              >
-                {m.closed ? "✓ " : i === running ? "● " : ""}
-                {status}
-              </span>
-            </button>
-          );
-        })}
+      {/* How results are entered: final totals (default) or live +1/+2 counter */}
+      <div className="flex rounded-xl bg-navy/60 p-1" role="tablist" aria-label={t.scoring.entryMode}>
+        {(["final", "live"] as const).map((m) => (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={`btn flex-1 text-base sm:text-lg ${mode === m ? "bg-brand text-navy" : "bg-transparent text-white"}`}
+          >
+            {m === "final" ? t.scoring.modeFinal : t.scoring.modeLive}
+          </button>
+        ))}
       </div>
 
-      <p className="rounded-xl bg-navy/60 px-3 py-2 text-sm text-white/90 sm:text-base">
-        {t.scoring.howTo(t.matchTypes[match.type])}
-      </p>
-
-      {/* Scoring panel */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_minmax(220px,260px)_1fr]">
-        <ScorePanel
-          name={teamA?.name}
-          players={lineup(teamA, selected)}
-          score={match.score.a}
-          isLead={matchLead === "a"}
-          onAdd={(delta) => dispatch({ type: "addPoints", ...ids, side: "a", delta })}
-        />
-        <div className="order-first flex flex-col gap-3 md:order-none">
-          <div className="text-center">
-            <div className="headline text-3xl">{t.matchTypes[match.type]}</div>
-            <div className="subline text-sm">
-              {match.closed ? t.scoring.closed : selected === running ? t.scoring.running : t.scoring.upcoming}
-            </div>
-          </div>
-          <MatchTimer
-            timer={match.timer}
-            minutes={minutes}
-            onStart={() => dispatch({ type: "timerStart", ...ids })}
-            onPause={() => dispatch({ type: "timerPause", ...ids })}
-            onReset={() => dispatch({ type: "timerReset", ...ids })}
-          />
-          {match.closed ? (
-            <button className="btn-secondary min-h-[64px]" onClick={() => dispatch({ type: "reopenMatch", ...ids })}>
-              {t.scoring.reopenMatch}
-            </button>
-          ) : (
-            <button className="btn-primary min-h-[64px] text-xl" onClick={closeMatch}>
-              {t.scoring.closeMatch} →
-            </button>
-          )}
-        </div>
-        <ScorePanel
-          name={teamB?.name}
-          players={lineup(teamB, selected)}
-          score={match.score.b}
-          isLead={matchLead === "b"}
-          onAdd={(delta) => dispatch({ type: "addPoints", ...ids, side: "b", delta })}
-        />
-      </div>
+      {mode === "final" ? (
+        <FinalEntry state={state} duel={duel} />
+      ) : (
+        <LiveEntry state={state} duel={duel} />
+      )}
 
       {/* Duel actions */}
       <div className="card flex flex-wrap items-center gap-2 p-3">
@@ -385,7 +318,7 @@ function DuelView({
             onChange={(e) => {
               const side = (e.target.value || null) as Side | null;
               dispatch({ type: "setWalkover", duelId: duel.id, side });
-              if (side) setManual(true);
+              if (side) setMode("final");
             }}
           >
             <option value="" className="bg-navy">
@@ -399,10 +332,6 @@ function DuelView({
             </option>
           </select>
         </label>
-        <button className="btn-secondary ml-auto" onClick={() => setManual(!manual)}>
-          ✎ {t.scoring.manualEntry}
-        </button>
-        {manual && <ManualEntry duel={duel} teamA={teamA?.name} teamB={teamB?.name} />}
       </div>
     </div>
   );
@@ -477,44 +406,216 @@ function ScorePanel({
   );
 }
 
-function ManualEntry({ duel, teamA, teamB }: { duel: Duel; teamA?: string; teamB?: string }) {
+type EntryMode = "final" | "live";
+
+/**
+ * Main way to score: the players report each match result after playing
+ * ("10 to 15") and the organiser types both totals. Save closes the match.
+ */
+function FinalEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
+  const teamA = teamById(state, duel.teamA);
+  const teamB = teamById(state, duel.teamB);
+  const running = currentMatchIndex(duel);
+  const allSaved = running === -1;
+  const minutes = state.settings.matchMinutes[duel.round - 1];
+  const clockIndex = running >= 0 ? running : 3;
+
   return (
-    <div className="w-full">
-      {duel.walkover && <p className="mb-2 text-sm text-accent">{t.scoring.walkoverHint}</p>}
-      <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-2">
-        <span />
-        <span className="truncate text-center font-cond font-bold uppercase">{teamA ?? t.tbd}</span>
-        <span className="truncate text-center font-cond font-bold uppercase">{teamB ?? t.tbd}</span>
-        {duel.matches.map((m, i) => (
-          <ManualRow key={m.type} duel={duel} index={i} />
-        ))}
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_260px]">
+      <div className="card flex flex-col gap-2 p-3">
+        <p className="text-sm text-white/80">{duel.walkover ? t.scoring.walkoverHint : t.scoring.finalHint}</p>
+        <div className="grid grid-cols-[minmax(0,1fr)_5rem_auto_5rem_minmax(5.5rem,auto)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_auto_7rem_8rem]">
+          <span />
+          <span className="truncate text-center font-cond text-sm font-bold uppercase sm:text-lg">
+            {teamA?.name ?? t.tbd}
+          </span>
+          <span />
+          <span className="truncate text-center font-cond text-sm font-bold uppercase sm:text-lg">
+            {teamB?.name ?? t.tbd}
+          </span>
+          <span />
+          {duel.matches.map((m, i) => (
+            <FinalRow key={m.type} state={state} duel={duel} index={i} isNext={i === running} />
+          ))}
+        </div>
+        {allSaved && !duel.closed && (
+          <button
+            className="btn-accent mt-2 min-h-[64px] text-xl"
+            onClick={() => dispatch({ type: "closeDuel", duelId: duel.id })}
+          >
+            {t.scoring.closeDuel} ✓
+          </button>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="subline text-center text-sm">
+          {t.scoring.clockFor} {t.matchTypes[duel.matches[clockIndex].type]}
+        </div>
+        <MatchTimer
+          timer={duel.matches[clockIndex].timer}
+          minutes={minutes}
+          onStart={() => dispatch({ type: "timerStart", duelId: duel.id, matchIndex: clockIndex })}
+          onPause={() => dispatch({ type: "timerPause", duelId: duel.id, matchIndex: clockIndex })}
+          onReset={() => dispatch({ type: "timerReset", duelId: duel.id, matchIndex: clockIndex })}
+        />
       </div>
     </div>
   );
 }
 
-function ManualRow({ duel, index }: { duel: Duel; index: number }) {
+function FinalRow({
+  state,
+  duel,
+  index,
+  isNext,
+}: {
+  state: TournamentState;
+  duel: Duel;
+  index: number;
+  isNext: boolean;
+}) {
   const m = duel.matches[index];
+  const lead = leader(m.score);
   const set = (a: number, b: number) => dispatch({ type: "setScore", duelId: duel.id, matchIndex: index, a, b });
+  const players = [lineup(teamById(state, duel.teamA), index), lineup(teamById(state, duel.teamB), index)];
+  const input = (side: "a" | "b") => (
+    <input
+      type="number"
+      inputMode="numeric"
+      min={0}
+      aria-label={`${t.matchTypes[m.type]} – ${side === "a" ? t.csv.teamA : t.csv.teamB}`}
+      className={`field h-16 px-1 text-center font-cond text-4xl font-extrabold ${
+        lead === side ? "text-brand ring-2 ring-brand" : ""
+      }`}
+      placeholder="0"
+      value={m.score[side] || ""}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const v = Number(e.target.value) || 0;
+        if (side === "a") set(v, m.score.b);
+        else set(m.score.a, v);
+      }}
+    />
+  );
   return (
     <>
-      <span className="font-cond font-bold uppercase text-brand">{t.matchTypes[m.type]}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        className="field text-center text-xl"
-        value={m.score.a}
-        onChange={(e) => set(Number(e.target.value), m.score.b)}
+      <div className={`min-w-0 rounded-lg px-2 py-1 ${isNext ? "bg-accent/20 ring-2 ring-accent" : ""}`}>
+        <div className="font-cond text-lg font-bold uppercase text-brand sm:text-2xl">{t.matchTypes[m.type]}</div>
+        <div className="hidden truncate text-xs text-accent sm:block">
+          {players[0].join(" · ")} vs {players[1].join(" · ")}
+        </div>
+      </div>
+      {input("a")}
+      <span className="font-cond text-2xl font-bold text-white/50">:</span>
+      {input("b")}
+      {m.closed ? (
+        <span className="text-center text-sm font-bold uppercase text-emerald-300">✓ {t.scoring.saved}</span>
+      ) : (
+        <button
+          className="btn-primary min-h-[56px] px-2"
+          onClick={() => dispatch({ type: "closeMatch", duelId: duel.id, matchIndex: index })}
+        >
+          {t.scoring.save} ✓
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Point-by-point counter for when someone scores live at the court. */
+function LiveEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
+  const running = currentMatchIndex(duel);
+  const [selected, setSelected] = useState(running >= 0 ? running : 3);
+  const match = duel.matches[selected];
+  const teamA = teamById(state, duel.teamA);
+  const teamB = teamById(state, duel.teamB);
+  const matchLead = leader(match.score);
+  const minutes = state.settings.matchMinutes[duel.round - 1];
+  const ids = { duelId: duel.id, matchIndex: selected };
+
+  const closeMatch = () => {
+    dispatch({ type: "closeMatch", ...ids });
+    if (selected < 3) setSelected(selected + 1);
+  };
+
+  return (
+    <>
+    {/* The four matches */}
+    <div className="grid grid-cols-4 gap-2">
+      {duel.matches.map((m, i) => {
+        const status = m.closed ? t.scoring.closed : i === running ? t.scoring.running : t.scoring.upcoming;
+        return (
+          <button
+            key={m.type}
+            onClick={() => setSelected(i)}
+            className={`card flex flex-col items-center px-1 py-2 transition ${
+              i === selected ? "bg-surface ring-4 ring-brand" : m.closed ? "opacity-70" : ""
+            } ${i === running && i !== selected ? "ring-2 ring-accent" : ""}`}
+          >
+            <span className="font-cond text-base font-bold uppercase text-brand sm:text-xl">
+              {t.matchTypes[m.type]}
+            </span>
+            <span className="score text-2xl sm:text-3xl">
+              {m.score.a}:{m.score.b}
+            </span>
+            <span
+              className={`text-[11px] font-semibold uppercase tracking-wide sm:text-xs ${
+                i === running ? "text-accent" : "text-white/60"
+              }`}
+            >
+              {m.closed ? "✓ " : i === running ? "● " : ""}
+              {status}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+
+    <p className="rounded-xl bg-navy/60 px-3 py-2 text-sm text-white/90 sm:text-base">
+      {t.scoring.howTo(t.matchTypes[match.type])}
+    </p>
+
+    {/* Scoring panel */}
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_minmax(220px,260px)_1fr]">
+      <ScorePanel
+        name={teamA?.name}
+        players={lineup(teamA, selected)}
+        score={match.score.a}
+        isLead={matchLead === "a"}
+        onAdd={(delta) => dispatch({ type: "addPoints", ...ids, side: "a", delta })}
       />
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        className="field text-center text-xl"
-        value={m.score.b}
-        onChange={(e) => set(m.score.a, Number(e.target.value))}
+      <div className="order-first flex flex-col gap-3 md:order-none">
+        <div className="text-center">
+          <div className="headline text-3xl">{t.matchTypes[match.type]}</div>
+          <div className="subline text-sm">
+            {match.closed ? t.scoring.closed : selected === running ? t.scoring.running : t.scoring.upcoming}
+          </div>
+        </div>
+        <MatchTimer
+          timer={match.timer}
+          minutes={minutes}
+          onStart={() => dispatch({ type: "timerStart", ...ids })}
+          onPause={() => dispatch({ type: "timerPause", ...ids })}
+          onReset={() => dispatch({ type: "timerReset", ...ids })}
+        />
+        {match.closed ? (
+          <button className="btn-secondary min-h-[64px]" onClick={() => dispatch({ type: "reopenMatch", ...ids })}>
+            {t.scoring.reopenMatch}
+          </button>
+        ) : (
+          <button className="btn-primary min-h-[64px] text-xl" onClick={closeMatch}>
+            {t.scoring.closeMatch} →
+          </button>
+        )}
+      </div>
+      <ScorePanel
+        name={teamB?.name}
+        players={lineup(teamB, selected)}
+        score={match.score.b}
+        isLead={matchLead === "b"}
+        onAdd={(delta) => dispatch({ type: "addPoints", ...ids, side: "b", delta })}
       />
+    </div>
     </>
   );
 }

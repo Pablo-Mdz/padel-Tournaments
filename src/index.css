@@ -72,3 +72,14 @@
 .blink {
   animation: pulse-warn 1s ease-in-out infinite;
 }
+
+/* Score inputs: no spinner arrows, the tablet shows a number pad anyway. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
