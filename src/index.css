@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    @apply font-sans text-white antialiased;
+    background-color: #01135b;
+    background-image: linear-gradient(180deg, #01135b 0%, #102e76 100%);
+    background-attachment: fixed;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    touch-action: manipulation;
+  }
+  input,
+  select {
+    @apply text-white;
+  }
+}
+
+@layer components {
+  .headline {
+    @apply font-cond font-extrabold uppercase tracking-wide text-brand;
+  }
+  .subline {
+    @apply font-cond font-semibold uppercase tracking-wider text-accent;
+  }
+  .card {
+    @apply rounded-2xl bg-surface/80 shadow-lg shadow-black/30 ring-1 ring-white/10;
+  }
+  .score {
+    @apply font-cond font-extrabold tabular-nums leading-none;
+  }
+  .btn {
+    @apply inline-flex min-h-[48px] select-none items-center justify-center gap-2 rounded-xl px-4 font-cond text-lg font-bold uppercase tracking-wide transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-navy hover:brightness-105;
+  }
+  .btn-secondary {
+    @apply btn bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/15;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-navy hover:brightness-105;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-500;
+  }
+  .field {
+    @apply w-full rounded-lg bg-navy/70 px-3 py-2 text-base ring-1 ring-white/20 placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-brand;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wider text-accent;
+  }
+}
+
+@keyframes pulse-warn {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.blink {
+  animation: pulse-warn 1s ease-in-out infinite;
+}

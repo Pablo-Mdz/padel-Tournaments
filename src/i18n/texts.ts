@@ -194,5 +194,5 @@ export const t = {
     no: "no",
   },
 
-  syncedOffline: "Offline ready",
+  saveFailed: "Saving failed – download a backup now (Setup → Backup).",
 };

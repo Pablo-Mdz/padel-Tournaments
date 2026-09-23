@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, emptyMatches } from "./tournament";
-import { Duel, MATCH_TYPES, Team, TournamentState } from "./types";
+import { Duel, MATCH_TYPES, Settings, Team, TournamentState } from "./types";
 
 export const STORAGE_KEY = "padel-team-challenge:v1";
 
@@ -59,7 +59,7 @@ export function parseState(raw: string | unknown): TournamentState {
       teamB: typeof d.teamB === "number" ? d.teamB : null,
       closed: d.closed === true,
       walkover: d.walkover === "a" || d.walkover === "b" ? d.walkover : null,
-      matches: base.map((m, i) => {
+      matches: base.map((_, i) => {
         const src = isObj(matches[i]) ? (matches[i] as Record<string, unknown>) : {};
         const score = isObj(src.score) ? src.score : {};
         const timer = isObj(src.timer) ? src.timer : {};
@@ -100,8 +100,6 @@ export function parseState(raw: string | unknown): TournamentState {
     manualOrder: isObj(data.manualOrder) ? (data.manualOrder as TournamentState["manualOrder"]) : {},
   };
 }
-
-type Settings = TournamentState["settings"];
 
 export function serializeBackup(state: TournamentState, now = new Date()): string {
   return JSON.stringify({ app: "padel-team-challenge", exportedAt: now.toISOString(), state }, null, 2);
