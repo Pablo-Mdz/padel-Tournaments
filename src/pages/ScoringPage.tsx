@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
 import MatchTimer from "../components/MatchTimer";
 import { t } from "../i18n/texts";
@@ -15,40 +15,74 @@ import {
   teamById,
 } from "../model/tournament";
 import { Duel, ROUNDS, RoundNo, Side, TournamentState } from "../model/types";
+import { historyCourt, pushHistory } from "../router";
 import { useNow, useSessionState } from "../store/hooks";
 import { dispatch, useTournament } from "../store/store";
+
+/** true while the open court was pushed onto the history by this tab, so "back" can pop it. */
+let courtPushed = false;
 
 export default function ScoringPage() {
   const state = useTournament();
   const [round, setRound] = useSessionState<RoundNo>("ui:round", activeRound(state));
-  const [courtIndex, setCourtIndex] = useSessionState<number | null>("ui:court", null);
+  // The open court lives in the browser history, so the tablet's back button closes it.
+  const [courtIndex, setCourtIndex] = useState<number | null>(historyCourt);
   const now = useNow(500);
   const duels = duelsOfRound(state, round);
   const openDuel = courtIndex != null ? duels[courtIndex] : undefined;
 
+  useEffect(() => {
+    const onPop = () => {
+      courtPushed = false;
+      setCourtIndex(historyCourt());
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("app:navigate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("app:navigate", onPop);
+    };
+  }, []);
+
+  const openCourt = (i: number) => {
+    courtPushed = pushHistory({ route: "scoring", court: i });
+    setCourtIndex(i);
+    window.scrollTo(0, 0);
+  };
+  const switchCourt = (i: number) => {
+    pushHistory({ route: "scoring", court: i }, true);
+    setCourtIndex(i);
+  };
+  const closeCourt = () => {
+    if (courtPushed) window.history.back();
+    else pushHistory({ route: "scoring" }, true);
+    courtPushed = false;
+    setCourtIndex(null);
+  };
+
+  if (openDuel) {
+    return (
+      <DuelView
+        key={openDuel.id}
+        state={state}
+        duel={openDuel}
+        duels={duels}
+        onBack={closeCourt}
+        onCourt={switchCourt}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RoundBar key={round} state={state} round={round} setRound={setRound} />
-
-      {openDuel ? (
-        <DuelView
-          key={openDuel.id}
-          state={state}
-          duel={openDuel}
-          duels={duels}
-          onBack={() => setCourtIndex(null)}
-          onCourt={setCourtIndex}
-        />
-      ) : (
-        <>
-          {round === 3 && <Round3Editor state={state} />}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {duels.map((d) => (
-              <CourtCard key={d.id} state={state} duel={d} now={now} onOpen={() => setCourtIndex(d.courtIndex)} />
-            ))}
-          </div>
-        </>
-      )}
+      {round === 3 && <Round3Editor state={state} />}
+      <p className="subline text-base">👆 {t.scoring.pickCourt}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {duels.map((d) => (
+          <CourtCard key={d.id} state={state} duel={d} now={now} onOpen={() => openCourt(d.courtIndex)} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -217,22 +251,29 @@ function DuelView({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Court switcher */}
-      <div className="flex gap-2">
-        <button className="btn-secondary px-3" onClick={onBack} aria-label={t.scoring.back}>
-          ← <span className="hidden sm:inline">{t.scoring.back}</span>
+      {/* Where am I + way back + quick switch to the other courts */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="btn-secondary min-h-[56px] px-4 text-lg" onClick={onBack}>
+          ← {t.scoring.back}
         </button>
-        {duels.map((d) => (
-          <button
-            key={d.id}
-            onClick={() => onCourt(d.courtIndex)}
-            className={`btn min-w-0 flex-1 whitespace-nowrap px-1 text-base sm:text-xl ${
-              d.id === duel.id ? "bg-brand text-navy" : "bg-surface text-white ring-1 ring-white/15"
-            }`}
-          >
-            {t.court(courtLabelNumber(state, d.courtIndex))}
-          </button>
-        ))}
+        <div className="mr-auto leading-none">
+          <div className="headline text-3xl">{t.court(courtLabelNumber(state, duel.courtIndex))}</div>
+          <div className="subline text-sm">{t.round(duel.round)}</div>
+        </div>
+        <div className="flex gap-1" role="group" aria-label={t.scoring.otherCourts}>
+          {duels.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => onCourt(d.courtIndex)}
+              aria-current={d.id === duel.id}
+              className={`btn min-h-[48px] whitespace-nowrap px-3 text-base ${
+                d.id === duel.id ? "bg-brand text-navy" : "bg-surface text-white ring-1 ring-white/15"
+              }`}
+            >
+              {t.court(courtLabelNumber(state, d.courtIndex))}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Duel score – always visible */}
@@ -278,6 +319,10 @@ function DuelView({
           );
         })}
       </div>
+
+      <p className="rounded-xl bg-navy/60 px-3 py-2 text-sm text-white/90 sm:text-base">
+        {t.scoring.howTo(t.matchTypes[match.type])}
+      </p>
 
       {/* Scoring panel */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_minmax(220px,260px)_1fr]">
@@ -409,23 +454,23 @@ function ScorePanel({
         </div>
         <div className="min-h-[1.25rem] truncate text-sm text-accent">{players.join(" · ")}</div>
       </div>
-      <div className={`score text-center text-[96px] sm:text-[128px] ${isLead ? "text-brand" : "text-white"}`}>
+      <div className={`score text-center text-[80px] sm:text-[96px] ${isLead ? "text-brand" : "text-white"}`}>
         {score}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button
-          className="btn flex min-h-[88px] flex-col bg-white text-navy hover:bg-white/90"
+          className="btn flex min-h-[80px] flex-col bg-white text-navy hover:bg-white/90"
           onClick={() => onAdd(1)}
         >
           <span className="text-4xl leading-none">{t.scoring.plus1}</span>
           <span className="text-xs">{t.scoring.plus1Hint}</span>
         </button>
-        <button className="btn-primary flex min-h-[88px] flex-col" onClick={() => onAdd(2)}>
+        <button className="btn-primary flex min-h-[80px] flex-col" onClick={() => onAdd(2)}>
           <span className="text-4xl leading-none">{t.scoring.plus2}</span>
           <span className="text-xs">{t.scoring.plus2Hint}</span>
         </button>
       </div>
-      <button className="btn-secondary min-h-[56px]" onClick={() => onAdd(-1)} disabled={score <= 0}>
+      <button className="btn-secondary min-h-[48px]" onClick={() => onAdd(-1)} disabled={score <= 0}>
         {t.scoring.minus1} <span className="text-sm normal-case">{t.scoring.minus1Hint}</span>
       </button>
     </div>

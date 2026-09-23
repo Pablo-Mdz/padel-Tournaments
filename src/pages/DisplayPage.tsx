@@ -5,6 +5,7 @@ import { t } from "../i18n/texts";
 import { groupStandings, overallStandings } from "../model/standings";
 import { activeRound, duelsOfRound } from "../model/tournament";
 import { GROUPS, TournamentState } from "../model/types";
+import { goBack } from "../router";
 import { useNow } from "../store/hooks";
 import { useTournament } from "../store/store";
 
@@ -22,6 +23,27 @@ export default function DisplayPage() {
   const state = useTournament();
   const now = useNow(500);
   const [slide, setSlide] = useState(0);
+  // The TV screen has no controls; a tap, mouse move or Esc reveals a way back for a few seconds.
+  const [showExit, setShowExit] = useState(false);
+
+  useEffect(() => {
+    let timer = 0;
+    const reveal = () => {
+      setShowExit(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setShowExit(false), 4000);
+    };
+    const onKey = (e: KeyboardEvent) => (e.key === "Escape" ? goBack("scoring") : reveal());
+    window.addEventListener("pointermove", reveal);
+    window.addEventListener("pointerdown", reveal);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointermove", reveal);
+      window.removeEventListener("pointerdown", reveal);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => setSlide((s) => (s + 1) % SLIDES.length), SLIDE_MS);
@@ -40,7 +62,12 @@ export default function DisplayPage() {
         : t.display.groups;
 
   return (
-    <div className="flex h-screen cursor-none flex-col gap-[1.5vh] overflow-hidden p-[2vw]">
+    <div className={`flex h-screen flex-col gap-[1.5vh] overflow-hidden p-[2vw] ${showExit ? "" : "cursor-none"}`}>
+      {showExit && (
+        <button className="btn-primary fixed left-4 top-4 z-50 text-xl shadow-lg" onClick={() => goBack("scoring")}>
+          ← {t.display.exit}
+        </button>
+      )}
       <header className="flex items-end gap-[2vw]">
         <div className="leading-none">
           <div className="headline text-[4.2vw] leading-none">{state.settings.title}</div>

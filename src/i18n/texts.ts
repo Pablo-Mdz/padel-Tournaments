@@ -62,6 +62,11 @@ export const t = {
     walkoverHint: "Enter the result by hand for each match.",
     manualEntry: "Edit score by hand",
     back: "All courts",
+    otherCourts: "Switch court",
+    pickCourt: "Tap a court to enter its points.",
+    enterPoints: "Enter points",
+    howTo: (match: string) =>
+      `Points go to the ${match} match. +1 = the opponent made an error · +2 = winner (opponent can't touch the ball) · −1 = undo a mistake. Tap another match above to correct it.`,
     noTeams: "Pairing not set yet",
     leading: "leads",
     draw: "Draw",
@@ -169,6 +174,7 @@ export const t = {
     currentMatch: "Now",
     finished: "Finished",
     notStarted: "Not started",
+    exit: "Back to the app",
   },
 
   csv: {

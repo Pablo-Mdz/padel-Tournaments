@@ -82,6 +82,9 @@ export default function CourtCard({ state, duel, now, onOpen, big }: Props) {
           )}
         </div>
       )}
+      {onOpen && (
+        <span className="btn-primary pointer-events-none mt-1 w-full text-xl">{t.scoring.enterPoints} →</span>
+      )}
     </Wrapper>
   );
 }
