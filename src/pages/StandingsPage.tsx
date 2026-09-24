@@ -2,10 +2,11 @@ import StandingsTable from "../components/StandingsTable";
 import { t } from "../i18n/texts";
 import { groupStandings, overallStandings } from "../model/standings";
 import { GROUPS } from "../model/types";
-import { useTournament } from "../store/store";
+import { useReadOnly, useTournament } from "../store/store";
 
 export default function StandingsPage() {
   const state = useTournament();
+  const readOnly = useReadOnly();
   return (
     <div className="flex flex-col gap-4">
       <section className="card p-3 ring-4 ring-brand sm:p-5">
@@ -13,7 +14,7 @@ export default function StandingsPage() {
           <h2 className="headline text-3xl sm:text-4xl">🏆 {t.standings.overallTitle}</h2>
           <p className="subline text-sm">{t.standings.overallHint}</p>
         </div>
-        <StandingsTable state={state} rows={overallStandings(state)} context="overall" editable highlightLeader />
+        <StandingsTable state={state} rows={overallStandings(state)} context="overall" editable={!readOnly} highlightLeader />
       </section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -27,7 +28,7 @@ export default function StandingsPage() {
               state={state}
               rows={groupStandings(state, g)}
               context={g === "A" ? "groupA" : "groupB"}
-              editable
+              editable={!readOnly}
             />
           </section>
         ))}

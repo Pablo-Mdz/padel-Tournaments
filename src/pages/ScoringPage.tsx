@@ -17,7 +17,7 @@ import {
 import { Duel, ROUNDS, RoundNo, Side, TournamentState } from "../model/types";
 import { historyCourt, pushHistory } from "../router";
 import { useNow, useSessionState } from "../store/hooks";
-import { dispatch, useTournament } from "../store/store";
+import { dispatch, useReadOnly, useTournament } from "../store/store";
 
 /** true while the open court was pushed onto the history by this tab, so "back" can pop it. */
 let courtPushed = false;
@@ -29,7 +29,8 @@ export default function ScoringPage() {
   const [courtIndex, setCourtIndex] = useState<number | null>(historyCourt);
   const now = useNow(500);
   const duels = duelsOfRound(state, round);
-  const openDuel = courtIndex != null ? duels[courtIndex] : undefined;
+  const readOnly = useReadOnly();
+  const openDuel = !readOnly && courtIndex != null ? duels[courtIndex] : undefined;
 
   useEffect(() => {
     const onPop = () => {
@@ -75,12 +76,18 @@ export default function ScoringPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <RoundBar key={round} state={state} round={round} setRound={setRound} />
-      {round === 3 && <Round3Editor state={state} />}
-      <p className="subline text-base">👆 {t.scoring.pickCourt}</p>
+      <RoundBar key={round} state={state} round={round} setRound={setRound} readOnly={readOnly} />
+      {round === 3 && !readOnly && <Round3Editor state={state} />}
+      {!readOnly && <p className="subline text-base">👆 {t.scoring.pickCourt}</p>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {duels.map((d) => (
-          <CourtCard key={d.id} state={state} duel={d} now={now} onOpen={() => openCourt(d.courtIndex)} />
+          <CourtCard
+            key={d.id}
+            state={state}
+            duel={d}
+            now={now}
+            onOpen={readOnly ? undefined : () => openCourt(d.courtIndex)}
+          />
         ))}
       </div>
     </div>
@@ -91,10 +98,12 @@ function RoundBar({
   state,
   round,
   setRound,
+  readOnly,
 }: {
   state: TournamentState;
   round: RoundNo;
   setRound: (r: RoundNo) => void;
+  readOnly: boolean;
 }) {
   const closed = state.roundClosed[round - 1];
   const openDuels = duelsOfRound(state, round).filter((d) => !d.closed).length;
@@ -126,7 +135,7 @@ function RoundBar({
         <div className="subline hidden text-sm md:block">
           {state.settings.matchMinutes[round - 1]} min · {closed ? t.scoring.roundClosed : ""}
         </div>
-        {closed ? (
+        {readOnly ? null : closed ? (
           <button className="btn-secondary" onClick={() => dispatch({ type: "reopenRound", round })}>
             {t.scoring.reopenRound(round)}
           </button>

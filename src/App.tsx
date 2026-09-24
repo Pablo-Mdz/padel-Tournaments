@@ -6,7 +6,7 @@ import ScoringPage from "./pages/ScoringPage";
 import SetupPage from "./pages/SetupPage";
 import StandingsPage from "./pages/StandingsPage";
 import { Route, hrefFor, navigate, useRoute } from "./router";
-import { storageOk, useTournament } from "./store/store";
+import { shareNow, storageOk, useReadOnly, useShareStatus, useTournament } from "./store/store";
 
 const NAV: Array<{ route: Route; label: string }> = [
   { route: "scoring", label: t.nav.scoring },
@@ -31,6 +31,9 @@ export default function App() {
     return () => ro.disconnect();
   }, [route]);
 
+  const readOnly = useReadOnly();
+  const share = useShareStatus();
+
   if (route === "display") return <DisplayPage />;
 
   return (
@@ -44,7 +47,7 @@ export default function App() {
             </div>
           </div>
           <nav className="flex w-full gap-1 overflow-x-auto sm:w-auto">
-            {NAV.map((n) => (
+            {NAV.filter((n) => !(readOnly && n.route === "setup")).map((n) => (
               <a
                 key={n.route}
                 href={hrefFor(n.route)}
@@ -69,7 +72,8 @@ export default function App() {
             </a>
           </nav>
         </div>
-        {!storageOk() && (
+        {share !== "off" && <ShareBar status={share} />}
+        {!storageOk() && !readOnly && (
           <div className="bg-red-600 px-4 py-1 text-center text-sm font-semibold">
             {t.saveFailed}
           </div>
@@ -79,8 +83,32 @@ export default function App() {
         {route === "scoring" && <ScoringPage />}
         {route === "standings" && <StandingsPage />}
         {route === "results" && <ResultsPage />}
-        {route === "setup" && <SetupPage />}
+        {route === "setup" && (readOnly ? <StandingsPage /> : <SetupPage />)}
       </main>
+    </div>
+  );
+}
+
+/** Tells the organiser whether players and the TV already see the latest results. */
+function ShareBar({ status }: { status: ReturnType<typeof useShareStatus> }) {
+  if (status === "off") return null;
+  const tone =
+    status === "error" || status === "unshared"
+      ? "bg-accent text-navy"
+      : status === "readonly" || status === "checking"
+        ? "bg-surface text-white/80"
+        : "bg-emerald-700/70 text-white";
+  return (
+    <div className={`flex items-center justify-center gap-3 px-4 py-1 text-sm font-semibold ${tone}`} role="status">
+      <span>
+        {status === "live" ? "● " : status === "readonly" ? "● " : ""}
+        {t.share[status]}
+      </span>
+      {(status === "unshared" || status === "error" || status === "pending") && (
+        <button className="rounded-full bg-navy px-3 py-0.5 text-xs uppercase text-brand" onClick={() => void shareNow()}>
+          {t.share.shareNow}
+        </button>
+      )}
     </div>
   );
 }

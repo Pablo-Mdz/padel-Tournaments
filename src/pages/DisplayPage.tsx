@@ -6,7 +6,7 @@ import { groupStandings, overallStandings } from "../model/standings";
 import { activeRound, duelsOfRound } from "../model/tournament";
 import { GROUPS, TournamentState } from "../model/types";
 import { goBack } from "../router";
-import { useNow } from "../store/hooks";
+import { useNow, useSessionState } from "../store/hooks";
 import { useTournament } from "../store/store";
 
 const SLIDE_MS = 15_000;
@@ -22,7 +22,8 @@ function currentScheduleItem(state: TournamentState, now: number) {
 export default function DisplayPage() {
   const state = useTournament();
   const now = useNow(500);
-  const [slide, setSlide] = useState(0);
+  // Kept per tab so the rotation continues when the page reloads with new results.
+  const [slide, setSlide] = useSessionState("ui:slide", 0);
   // The TV screen has no controls; a tap, mouse move or Esc reveals a way back for a few seconds.
   const [showExit, setShowExit] = useState(false);
 
@@ -46,14 +47,14 @@ export default function DisplayPage() {
   }, []);
 
   useEffect(() => {
-    const id = window.setInterval(() => setSlide((s) => (s + 1) % SLIDES.length), SLIDE_MS);
-    return () => window.clearInterval(id);
-  }, []);
+    const id = window.setTimeout(() => setSlide((slide + 1) % SLIDES.length), SLIDE_MS);
+    return () => window.clearTimeout(id);
+  }, [slide, setSlide]);
 
   const round = activeRound(state);
   const item = currentScheduleItem(state, now);
   const clock = new Date(now).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  const kind = SLIDES[slide];
+  const kind = SLIDES[slide % SLIDES.length] ?? "live";
   const title =
     kind === "live"
       ? `${t.display.liveScores} · ${t.round(round)}`

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /** Current time, refreshed every `intervalMs` (for timers and the clock). */
 export function useNow(intervalMs = 500): number {
@@ -20,13 +20,16 @@ export function useSessionState<T>(key: string, initial: T): [T, (v: T) => void]
       return initial;
     }
   });
-  const set = (v: T) => {
-    setValue(v);
-    try {
-      sessionStorage.setItem(key, JSON.stringify(v));
-    } catch {
-      /* ignore */
-    }
-  };
+  const set = useCallback(
+    (v: T) => {
+      setValue(v);
+      try {
+        sessionStorage.setItem(key, JSON.stringify(v));
+      } catch {
+        /* ignore */
+      }
+    },
+    [key],
+  );
   return [value, set];
 }

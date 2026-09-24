@@ -207,5 +207,16 @@ export const t = {
     no: "no",
   },
 
+  share: {
+    checking: "Connecting…",
+    readonly: "Live results · updates automatically",
+    live: "Shared with everyone",
+    pending: "Sharing your changes…",
+    publishing: "Updating all screens…",
+    unshared: "Changes on this device are not shared yet",
+    error: "Sharing failed – check the connection",
+    shareNow: "Share now",
+  },
+
   saveFailed: "Saving failed – download a backup now (Setup → Backup).",
 };
