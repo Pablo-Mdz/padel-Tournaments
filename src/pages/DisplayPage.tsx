@@ -64,7 +64,10 @@ export default function DisplayPage() {
   return (
     <div className={`flex h-screen flex-col gap-[1.5vh] overflow-hidden p-[2vw] ${showExit ? "" : "cursor-none"}`}>
       {showExit && (
-        <button className="btn-primary fixed left-4 top-4 z-50 text-xl shadow-lg" onClick={() => goBack("scoring")}>
+        <button
+          className="fixed bottom-3 left-3 z-50 rounded-full bg-navy/80 px-3 py-1.5 font-cond text-sm font-semibold uppercase tracking-wide text-white/90 ring-1 ring-white/30 backdrop-blur hover:bg-surface hover:text-brand"
+          onClick={() => goBack("scoring")}
+        >
           ← {t.display.exit}
         </button>
       )}
