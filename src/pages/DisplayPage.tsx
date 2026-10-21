@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
 import StandingsTable from "../components/StandingsTable";
+import { Icon, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
 import { groupStandings, overallStandings } from "../model/standings";
 import { activeRound, duelsOfRound } from "../model/tournament";
@@ -63,58 +64,89 @@ export default function DisplayPage() {
         : t.display.groups;
 
   return (
-    <div className={`flex h-screen flex-col gap-[1.5vh] overflow-hidden p-[2vw] ${showExit ? "" : "cursor-none"}`}>
+    <div
+      className={`theme-tv relative flex h-screen flex-col gap-[2vh] overflow-hidden bg-navy px-[2.4vw] py-[3vh] text-ink ${
+        showExit ? "" : "cursor-none"
+      }`}
+      style={{
+        backgroundImage:
+          "radial-gradient(80% 60% at 85% -10%, rgb(16 46 118 / 0.95), transparent 60%), radial-gradient(60% 50% at -10% 110%, rgb(16 46 118 / 0.8), transparent 60%)",
+      }}
+    >
       {showExit && (
         <button
-          className="fixed bottom-3 left-3 z-50 rounded-full bg-navy/80 px-3 py-1.5 font-cond text-sm font-semibold uppercase tracking-wide text-white/90 ring-1 ring-white/30 backdrop-blur hover:bg-surface hover:text-brand"
+          className="fixed bottom-3 left-3 z-50 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white/90 ring-1 ring-white/20 backdrop-blur hover:bg-white/20"
           onClick={() => goBack("scoring")}
         >
-          ← {t.display.exit}
+          <Icon name="chevronLeft" className="h-4 w-4" />
+          {t.display.exit}
         </button>
       )}
-      <header className="flex items-end gap-[2vw]">
-        <div className="leading-none">
-          <div className="headline text-[4.2vw] leading-none">{state.settings.title}</div>
-          <div className="subline text-[1.7vw]">
+
+      <header className="flex items-center gap-[1.4vw]">
+        <span className="grid h-[7vh] w-[7vh] place-items-center rounded-[1.8vh] bg-yellow text-navy">
+          <Icon name="ball" className="h-[4.4vh] w-[4.4vh]" />
+        </span>
+        <div className="leading-tight">
+          <div className="text-[5vh] font-bold tracking-[-0.02em]">{state.settings.title}</div>
+          <div className="text-[2.2vh] font-medium text-ink2">
             {state.settings.subtitle} · {state.settings.date}
           </div>
         </div>
-        <div className="ml-auto text-right leading-none">
-          <div className="score text-[4.2vw]">{clock}</div>
-          {item && <div className="subline text-[1.6vw]">{item.label}</div>}
+        <div className="ml-auto text-right leading-tight">
+          <div className="num text-[6vh]">{clock}</div>
+          {item && <div className="text-[2.2vh] font-semibold text-yellow">{item.label}</div>}
         </div>
       </header>
 
       <div className="flex items-center gap-[1vw]">
-        <span className="rounded-full bg-red-600 px-[1vw] py-[0.3vh] font-cond text-[1.5vw] font-bold uppercase">
-          ● {t.display.live}
+        <span className="inline-flex items-center gap-[0.6vw] rounded-full bg-white/10 px-[1vw] py-[0.6vh] text-[2vh] font-bold uppercase tracking-[0.08em]">
+          <span className="live-dot h-[1.2vh] w-[1.2vh] bg-yellow text-yellow/60" />
+          {t.display.live}
         </span>
-        <h2 className="headline text-[3vw]">{title}</h2>
-        <div className="ml-auto flex gap-[0.6vw]">
+        <h2 key={kind} className="anim-rise text-[3.8vh] font-bold tracking-[-0.01em]">
+          {title}
+        </h2>
+        {/* Slide indicator: the current segment fills up until the next slide. */}
+        <div className="ml-auto flex gap-[0.5vw]">
           {SLIDES.map((s, i) => (
-            <span key={s} className={`h-[1vw] w-[3vw] rounded-full ${i === slide ? "bg-brand" : "bg-white/20"}`} />
+            <span key={s} className="h-[0.8vh] w-[4vw] overflow-hidden rounded-full bg-white/15">
+              {i < slide % SLIDES.length && <span className="block h-full w-full bg-white/60" />}
+              {i === slide % SLIDES.length && (
+                <span
+                  key={slide}
+                  className="block h-full w-full origin-left bg-yellow"
+                  style={{ animation: `fill-x ${SLIDE_MS}ms linear both` }}
+                />
+              )}
+            </span>
           ))}
         </div>
       </div>
 
-      <main className="min-h-0 flex-1">
+      <main key={kind} className="anim-rise min-h-0 flex-1">
         {kind === "live" && (
-          <div className="grid h-full grid-cols-2 grid-rows-2 gap-[1.5vw]">
-            {duelsOfRound(state, round).map((d) => (
-              <CourtCard key={d.id} state={state} duel={d} now={now} big />
+          <div className="grid h-full grid-cols-2 grid-rows-2 gap-[1.6vw]">
+            {duelsOfRound(state, round).map((d, i) => (
+              <CourtCard key={d.id} state={state} duel={d} now={now} big style={stagger(i, 90)} />
             ))}
           </div>
         )}
         {kind === "overall" && (
-          <div className="card h-full px-[2vw] py-[1vh] ring-4 ring-brand">
+          <div className="relative h-full overflow-hidden rounded-[2.4vh] bg-white/[0.07] px-[2vw] py-[1.5vh] ring-1 ring-white/10 backdrop-blur">
+            <span aria-hidden className="absolute inset-x-0 top-0 h-[0.6vh] bg-yellow" />
             <StandingsTable state={state} rows={overallStandings(state)} context="overall" big highlightLeader />
           </div>
         )}
         {kind === "groups" && (
-          <div className="grid h-full grid-cols-2 gap-[1.5vw]">
-            {GROUPS.map((g) => (
-              <div key={g} className="card px-[1.5vw] py-[1vh]">
-                <div className="headline text-[3vw]">{t.standings.groupTitle(g)}</div>
+          <div className="grid h-full grid-cols-2 gap-[1.6vw]">
+            {GROUPS.map((g, i) => (
+              <div
+                key={g}
+                style={stagger(i, 120)}
+                className="anim-rise overflow-hidden rounded-[2.4vh] bg-white/[0.07] px-[1.6vw] py-[1.5vh] ring-1 ring-white/10 backdrop-blur"
+              >
+                <div className="mb-[0.5vh] text-[3.6vh] font-bold">{t.standings.groupTitle(g)}</div>
                 <StandingsTable
                   state={state}
                   rows={groupStandings(state, g)}
@@ -127,7 +159,7 @@ export default function DisplayPage() {
           </div>
         )}
       </main>
-      <footer className="subline text-center text-[1.5vw]">{t.motto}</footer>
+      <footer className="text-center text-[2vh] font-semibold uppercase tracking-[0.14em] text-ink2">{t.motto}</footer>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { Icon, IconName } from "./components/ui";
 import { t } from "./i18n/texts";
 import DisplayPage from "./pages/DisplayPage";
 import ResultsPage from "./pages/ResultsPage";
@@ -6,109 +6,131 @@ import ScoringPage from "./pages/ScoringPage";
 import SetupPage from "./pages/SetupPage";
 import StandingsPage from "./pages/StandingsPage";
 import { Route, hrefFor, navigate, useRoute } from "./router";
-import { shareNow, storageOk, useReadOnly, useShareStatus, useTournament } from "./store/store";
+import { ShareStatus, shareNow, storageOk, useReadOnly, useShareStatus, useTournament } from "./store/store";
 
-const NAV: Array<{ route: Route; label: string }> = [
-  { route: "scoring", label: t.nav.scoring },
-  { route: "standings", label: t.nav.standings },
-  { route: "results", label: t.nav.results },
-  { route: "setup", label: t.nav.setup },
+const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
+  { route: "scoring", label: t.nav.scoring, icon: "ball" },
+  { route: "standings", label: t.nav.standings, icon: "chart" },
+  { route: "results", label: t.nav.results, icon: "trophy" },
+  { route: "setup", label: t.nav.setup, icon: "sliders" },
 ];
 
 export default function App() {
   const route = useRoute();
   const state = useTournament();
-  const headerRef = useRef<HTMLElement>(null);
-
-  // Expose the header height so sticky elements below it (duel score) sit right under it.
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() =>
-      document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`),
-    );
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [route]);
-
   const readOnly = useReadOnly();
   const share = useShareStatus();
 
   if (route === "display") return <DisplayPage />;
 
+  const tabs = TABS.filter((tab) => !(readOnly && tab.route === "setup"));
+  const page = route === "setup" && readOnly ? "standings" : route;
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header ref={headerRef} className="sticky top-0 z-30 border-b border-white/10 bg-navy/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-4">
-          <div className="mr-auto leading-none">
-            <div className="headline text-2xl sm:text-3xl">{state.settings.title}</div>
-            <div className="subline text-xs sm:text-sm">
+    <div className="min-h-screen pb-[calc(96px+env(safe-area-inset-bottom))]">
+      <header className="mx-auto flex max-w-[1180px] items-center gap-3 px-4 pt-[calc(14px+env(safe-area-inset-top))] sm:px-6">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-navy text-yellow">
+            <Icon name="ball" className="h-[18px] w-[18px]" />
+          </span>
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-[15px] font-semibold">{state.settings.title}</div>
+            <div className="truncate text-[12px] text-ink2">
               {state.settings.subtitle} · {state.settings.date}
             </div>
           </div>
-          <nav className="flex w-full gap-1 overflow-x-auto sm:w-auto">
-            {NAV.filter((n) => !(readOnly && n.route === "setup")).map((n) => (
-              <a
-                key={n.route}
-                href={hrefFor(n.route)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(n.route);
-                }}
-                className={`btn flex-1 whitespace-nowrap px-2 text-base sm:flex-none sm:px-4 sm:text-lg ${
-                  route === n.route ? "bg-brand text-navy" : "bg-white/5 text-white hover:bg-white/10"
-                }`}
-              >
-                {n.label}
-              </a>
-            ))}
-            <a
-              href={hrefFor("display")}
-              target={import.meta.env.VITE_HASH_ROUTER === "1" ? undefined : "_blank"}
-              rel="noreferrer"
-              className="btn hidden whitespace-nowrap bg-white/5 text-accent hover:bg-white/10 sm:inline-flex"
-            >
-              {t.nav.display} ↗
-            </a>
-          </nav>
         </div>
-        {share !== "off" && <ShareBar status={share} />}
-        {!storageOk() && !readOnly && (
-          <div className="bg-red-600 px-4 py-1 text-center text-sm font-semibold">
-            {t.saveFailed}
-          </div>
-        )}
+        <div className="ml-auto">
+          <SharePill status={share} />
+        </div>
       </header>
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-3 py-4 sm:px-4">
-        {route === "scoring" && <ScoringPage />}
-        {route === "standings" && <StandingsPage />}
-        {route === "results" && <ResultsPage />}
-        {route === "setup" && (readOnly ? <StandingsPage /> : <SetupPage />)}
+
+      {!storageOk() && !readOnly && (
+        <div className="mx-auto mt-3 max-w-[1180px] px-4 sm:px-6">
+          <div className="rounded-2xl bg-bad px-4 py-2 text-[15px] font-semibold text-white">{t.saveFailed}</div>
+        </div>
+      )}
+
+      <main key={page} className="anim-rise mx-auto w-full max-w-[1180px] px-4 pt-5 sm:px-6">
+        {page === "scoring" && <ScoringPage />}
+        {page === "standings" && <StandingsPage />}
+        {page === "results" && <ResultsPage />}
+        {page === "setup" && <SetupPage />}
       </main>
+
+      <TabBar tabs={tabs} route={page} />
     </div>
   );
 }
 
-/** Tells the organiser whether players and the TV already see the latest results. */
-function ShareBar({ status }: { status: ReturnType<typeof useShareStatus> }) {
-  if (status === "off") return null;
-  const tone =
-    status === "error" || status === "unshared"
-      ? "bg-accent text-navy"
-      : status === "readonly" || status === "checking"
-        ? "bg-surface text-white/80"
-        : "bg-emerald-700/70 text-white";
+/** Floating, frosted tab bar at the bottom – within reach of a thumb on a tablet. */
+function TabBar({ tabs, route }: { tabs: typeof TABS; route: Route }) {
+  const hashMode = import.meta.env.VITE_HASH_ROUTER === "1";
+  const item = "flex min-w-[60px] flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-colors duration-200 sm:min-w-[84px] sm:flex-row sm:gap-2 sm:px-4 sm:text-[15px]";
   return (
-    <div className={`flex items-center justify-center gap-3 px-4 py-1 text-sm font-semibold ${tone}`} role="status">
-      <span>
-        {status === "live" ? "● " : status === "readonly" ? "● " : ""}
-        {t.share[status]}
-      </span>
-      {(status === "unshared" || status === "error" || status === "pending") && (
-        <button className="rounded-full bg-navy px-3 py-0.5 text-xs uppercase text-brand" onClick={() => void shareNow()}>
-          {t.share.shareNow}
-        </button>
+    <nav
+      aria-label="Main"
+      className="glass fixed inset-x-0 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 mx-auto flex w-max max-w-[calc(100%-24px)] gap-1 rounded-full p-1.5"
+    >
+      {tabs.map((tab) => {
+        const active = tab.route === route;
+        return (
+          <a
+            key={tab.route}
+            href={hrefFor(tab.route)}
+            aria-current={active ? "page" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(tab.route);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`${item} ${active ? "bg-tint text-on-tint" : "text-ink2 hover:text-ink"}`}
+          >
+            <Icon name={tab.icon} className="h-[22px] w-[22px]" />
+            <span>{tab.label}</span>
+          </a>
+        );
+      })}
+      <span className="mx-0.5 my-2 w-px bg-line/10" aria-hidden />
+      <a
+        href={hrefFor("display")}
+        target={hashMode ? undefined : "_blank"}
+        rel="noreferrer"
+        className={`${item} text-ink2 hover:text-ink`}
+      >
+        <Icon name="tv" className="h-[22px] w-[22px]" />
+        <span>{t.nav.display}</span>
+      </a>
+    </nav>
+  );
+}
+
+/** Tells the organiser whether players and the TV already see the latest results. */
+function SharePill({ status }: { status: ShareStatus }) {
+  if (status === "off") return null;
+  if (status === "unshared" || status === "error" || status === "pending") {
+    return (
+      <button
+        onClick={() => void shareNow()}
+        className={`chip ${status === "pending" ? "bg-fill/[0.14] text-ink2" : "bg-warn/15 text-warn"}`}
+        title={t.share[status]}
+      >
+        {status === "pending" ? <span className="spinner" /> : <Icon name="alert" className="h-4 w-4" />}
+        <span className="hidden sm:inline">{t.share[status]}</span>
+        <span className="rounded-full bg-tint px-2 py-0.5 text-[12px] text-on-tint">{t.share.shareNow}</span>
+      </button>
+    );
+  }
+  const tone =
+    status === "live" ? "text-good bg-good/10" : status === "readonly" ? "text-navy bg-yellow" : "text-ink2 bg-fill/[0.12]";
+  return (
+    <span className={`chip ${tone}`} role="status">
+      {status === "publishing" || status === "checking" ? (
+        <span className="spinner" />
+      ) : (
+        <span className={`live-dot ${status === "readonly" ? "bg-navy text-navy/40" : "bg-good text-good/40"}`} />
       )}
-    </div>
+      <span className="max-w-[48vw] truncate">{t.share[status]}</span>
+    </span>
   );
 }

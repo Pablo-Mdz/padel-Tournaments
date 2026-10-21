@@ -7,8 +7,6 @@ import type { TournamentState } from "../model/types";
 
 export const ARTIFACT_MODE = import.meta.env.VITE_ARTIFACT === "1";
 
-const FONTS_HREF =
-  "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap";
 
 // Minimal shapes of the viewer's capabilities we use.
 interface ArtifactNs {
@@ -63,8 +61,6 @@ export function buildDocument(state: TournamentState): string | null {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Padel Team Challenge</title>
-<link rel="stylesheet" href="${FONTS_HREF}">
-<style>:root{color-scheme:dark}<\/style>
 <style id="app-style">${style}<\/style>
 </head>
 <body>

@@ -3,6 +3,7 @@ import { StandingRow } from "../model/standings";
 import { teamById } from "../model/tournament";
 import { RankingContext, TournamentState } from "../model/types";
 import { dispatch } from "../store/store";
+import { Icon, Num, stagger } from "./ui";
 
 interface Props {
   state: TournamentState;
@@ -38,101 +39,146 @@ export default function StandingsTable({
   columns = "full",
 }: Props) {
   const full = columns === "full";
-  const cell = big ? "px-[1.2vw] py-[0.5vh]" : "px-2 py-2";
-  const text = big ? "text-[3.6vh]" : "text-base sm:text-lg";
+  const pad = big ? "px-[1vw] py-[0.6vh]" : "px-2 py-2.5";
   const anyTie = rows.some((r) => r.unresolvedTie);
+  const stat = `${pad} text-center tabular-nums text-ink2 ${big ? "text-[2.7vh]" : "text-[15px]"}`;
+  const head = `${pad} whitespace-nowrap font-semibold text-ink2 ${big ? "text-[2vh]" : "text-[12px]"}`;
 
   return (
-    <div>
-      <table className={`w-full border-separate border-spacing-y-1 ${text}`}>
-        <thead>
-          <tr className={`subline ${big ? "text-[2.4vh]" : "text-xs sm:text-sm"}`}>
-            <th className={`${cell} text-left`}>{t.standings.pos}</th>
-            <th className={`${cell} text-left`}>{t.standings.team}</th>
-            {full && (
-              <>
-                <th className={cell}>{t.standings.played}</th>
-                <th className={cell}>{t.standings.won}</th>
-                <th className={cell}>{t.standings.drawn}</th>
-                <th className={cell}>{t.standings.lost}</th>
-              </>
-            )}
-            <th className={cell}>{t.standings.pf}</th>
-            <th className={cell}>{t.standings.pa}</th>
-            <th className={cell}>{t.standings.diff}</th>
-            {editable && <th className={cell} />}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => {
-            const team = teamById(state, r.teamId);
-            const lead = highlightLeader && i === 0 && r.pf > 0;
-            const rowBg = r.unresolvedTie
-              ? "bg-red-700/70 ring-2 ring-red-400"
-              : lead
-                ? "bg-brand text-navy"
-                : "bg-surface/90";
-            const canMove = editable && r.tiedWith.length > 1 && (r.unresolvedTie || r.manualTie);
-            return (
-              <tr key={r.teamId} className={rowBg} title={r.unresolvedTie ? t.standings.tieUnresolved : undefined}>
-                <td className={`${cell} score rounded-l-xl text-left ${lead ? "" : "text-brand"}`}>{r.rank}</td>
-                <td className={`${cell} text-left font-cond font-bold uppercase leading-tight`}>
-                  {lead && <span className="mr-2">🏆</span>}
-                  {team?.name ?? `Team ${r.teamId}`}
-                  {r.manualTie && !big && (
-                    <span className={`ml-2 text-xs font-normal normal-case ${lead ? "" : "text-accent"}`}>
-                      ({t.standings.tieManual})
-                    </span>
-                  )}
-                </td>
-                {full && (
-                  <>
-                    <td className={`${cell} text-center tabular-nums`}>{r.played}</td>
-                    <td className={`${cell} text-center tabular-nums`}>{r.won}</td>
-                    <td className={`${cell} text-center tabular-nums`}>{r.drawn}</td>
-                    <td className={`${cell} text-center tabular-nums`}>{r.lost}</td>
-                  </>
-                )}
-                <td className={`${cell} score text-center ${big ? "text-[4.6vh]" : "text-2xl"}`}>{r.pf}</td>
-                <td className={`${cell} text-center tabular-nums opacity-80`}>{r.pa}</td>
-                <td
-                  className={`${cell} text-center tabular-nums ${!editable ? "rounded-r-xl" : ""} ${
-                    lead ? "" : r.diff > 0 ? "text-emerald-300" : r.diff < 0 ? "text-accent" : ""
+    <div className="flex flex-col gap-3">
+      <div className="-mx-1 overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="uppercase tracking-[0.06em]">
+              <th className={`${head} w-[1%] text-left`}>{t.standings.pos}</th>
+              <th className={`${head} text-left`}>{t.standings.team}</th>
+              {full && (
+                <>
+                  <th className={`${head} text-center`} title={t.csv.played}>
+                    {t.standings.played}
+                  </th>
+                  <th className={`${head} text-center`} title={t.csv.won}>
+                    {t.standings.won}
+                  </th>
+                  <th className={`${head} text-center`} title={t.csv.drawn}>
+                    {t.standings.drawn}
+                  </th>
+                  <th className={`${head} text-center`} title={t.csv.lost}>
+                    {t.standings.lost}
+                  </th>
+                </>
+              )}
+              <th className={`${head} text-right`} title={t.csv.pf}>
+                {t.standings.pf}
+              </th>
+              <th className={`${head} text-center`} title={t.csv.pa}>
+                {t.standings.pa}
+              </th>
+              <th className={`${head} text-center`} title={t.csv.diff}>
+                {t.standings.diff}
+              </th>
+              {editable && <th className={head} />}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const team = teamById(state, r.teamId);
+              const lead = !!highlightLeader && i === 0 && r.pf > 0;
+              const canMove = editable && r.tiedWith.length > 1 && (r.unresolvedTie || r.manualTie);
+              return (
+                <tr
+                  key={r.teamId}
+                  style={stagger(i, 35)}
+                  className={`anim-rise border-t hairline transition-colors ${
+                    r.unresolvedTie ? "bg-bad/[0.08]" : lead ? "hi" : ""
                   }`}
+                  title={r.unresolvedTie ? t.standings.tieUnresolved : undefined}
                 >
-                  {r.diff > 0 ? `+${r.diff}` : r.diff}
-                </td>
-                {editable && (
-                  <td className={`${cell} rounded-r-xl text-right`}>
-                    {canMove && (
-                      <span className="inline-flex gap-1">
-                        <button
-                          className="btn-secondary min-h-[40px] px-3"
-                          aria-label={t.standings.moveUp}
-                          disabled={!rows[i - 1]?.tiedWith.includes(r.teamId)}
-                          onClick={() => move(rows, context, i, -1)}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          className="btn-secondary min-h-[40px] px-3"
-                          aria-label={t.standings.moveDown}
-                          disabled={!rows[i + 1]?.tiedWith.includes(r.teamId)}
-                          onClick={() => move(rows, context, i, 1)}
-                        >
-                          ▼
-                        </button>
-                      </span>
-                    )}
+                  <td className={`${pad} align-middle`}>
+                    <span
+                      className={`num grid place-items-center rounded-full ${
+                        big ? "h-[4.4vh] w-[4.4vh] text-[2.5vh]" : "h-8 w-8 text-[15px]"
+                      } ${
+                        lead
+                          ? "bg-yellow text-navy"
+                          : r.unresolvedTie
+                            ? "bg-bad text-white"
+                            : i < 3 && r.pf > 0
+                              ? "bg-tint text-on-tint"
+                              : "bg-fill/[0.14] text-ink"
+                      }`}
+                    >
+                      {r.rank}
+                    </span>
                   </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  <td className={`${pad} max-w-0 w-full`}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className={`truncate font-semibold ${big ? "text-[3.1vh]" : "text-[17px]"}`}>
+                        {team?.name ?? `${t.team} ${r.teamId}`}
+                      </span>
+                      {lead && (
+                        <Icon
+                          name="trophy"
+                          className={`shrink-0 text-ink ${big ? "h-[3vh] w-[3vh]" : "h-4 w-4"}`}
+                          label={t.standings.champion}
+                        />
+                      )}
+                      {r.unresolvedTie && (
+                        <Icon name="alert" className={`shrink-0 text-bad ${big ? "h-[3vh] w-[3vh]" : "h-4 w-4"}`} />
+                      )}
+                    </div>
+                    {r.manualTie && !big && <div className="text-[12px] text-ink2">{t.standings.tieManual}</div>}
+                  </td>
+                  {full && (
+                    <>
+                      <td className={stat}>{r.played}</td>
+                      <td className={stat}>{r.won}</td>
+                      <td className={stat}>{r.drawn}</td>
+                      <td className={stat}>{r.lost}</td>
+                    </>
+                  )}
+                  <td className={`${pad} text-right`}>
+                    <Num value={r.pf} className={`text-ink ${big ? "text-[3.9vh]" : "text-[24px]"}`} />
+                  </td>
+                  <td className={stat}>{r.pa}</td>
+                  <td className={`${stat} font-semibold ${r.diff > 0 ? "!text-good" : ""}`}>
+                    {r.diff > 0 ? `+${r.diff}` : r.diff}
+                  </td>
+                  {editable && (
+                    <td className={`${pad} text-right`}>
+                      {canMove && (
+                        <span className="inline-flex gap-1.5">
+                          <button
+                            className="icon-btn"
+                            aria-label={t.standings.moveUp}
+                            disabled={!rows[i - 1]?.tiedWith.includes(r.teamId)}
+                            onClick={() => move(rows, context, i, -1)}
+                          >
+                            <Icon name="chevronUp" className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="icon-btn"
+                            aria-label={t.standings.moveDown}
+                            disabled={!rows[i + 1]?.tiedWith.includes(r.teamId)}
+                            onClick={() => move(rows, context, i, 1)}
+                          >
+                            <Icon name="chevronDown" className="h-4 w-4" />
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {anyTie && !big && (
-        <p className="mt-2 rounded-lg bg-red-700/60 px-3 py-2 text-sm font-semibold">⚠ {t.standings.tieUnresolved}</p>
+        <div className="flex items-center gap-2 rounded-xl bg-bad/10 px-3 py-2 text-[14px] font-medium text-bad">
+          <Icon name="alert" className="h-4 w-4" />
+          {t.standings.tieUnresolved}
+        </div>
       )}
     </div>
   );
