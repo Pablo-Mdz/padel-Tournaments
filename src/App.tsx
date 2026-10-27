@@ -1,4 +1,4 @@
-import { Icon, IconName } from "./components/ui";
+import { Icon, IconName, Notice } from "./components/ui";
 import { t } from "./i18n/texts";
 import DisplayPage from "./pages/DisplayPage";
 import ResultsPage from "./pages/ResultsPage";
@@ -44,6 +44,23 @@ export default function App() {
           <SharePill status={share} />
         </div>
       </header>
+
+      {(share === "offline" || share === "error") && (
+        <div className="mx-auto mt-3 max-w-[1180px] px-4 sm:px-6">
+          <Notice
+            tone="warn"
+            actions={
+              share === "error" ? (
+                <button className="btn-tint min-h-[38px] px-4 text-[15px]" onClick={() => void shareNow()}>
+                  {t.share.shareNow}
+                </button>
+              ) : undefined
+            }
+          >
+            {share === "offline" ? t.share.offlineHelp : t.share.errorHelp}
+          </Notice>
+        </div>
+      )}
 
       {!storageOk() && !readOnly && (
         <div className="mx-auto mt-3 max-w-[1180px] px-4 sm:px-6">
@@ -108,6 +125,14 @@ function TabBar({ tabs, route }: { tabs: typeof TABS; route: Route }) {
 /** Tells the organiser whether players and the TV already see the latest results. */
 function SharePill({ status }: { status: ShareStatus }) {
   if (status === "off") return null;
+  if (status === "offline") {
+    return (
+      <span className="chip bg-warn/15 text-warn" role="status">
+        <Icon name="alert" className="h-4 w-4" />
+        <span className="max-w-[48vw] truncate">{t.share.offline}</span>
+      </span>
+    );
+  }
   if (status === "unshared" || status === "error" || status === "pending") {
     return (
       <button
@@ -125,7 +150,7 @@ function SharePill({ status }: { status: ShareStatus }) {
     status === "live" ? "text-good bg-good/10" : status === "readonly" ? "text-navy bg-yellow" : "text-ink2 bg-fill/[0.12]";
   return (
     <span className={`chip ${tone}`} role="status">
-      {status === "publishing" || status === "checking" ? (
+      {status === "publishing" || status === "checking" || status === "connecting" ? (
         <span className="spinner" />
       ) : (
         <span className={`live-dot ${status === "readonly" ? "bg-navy text-navy/40" : "bg-good text-good/40"}`} />

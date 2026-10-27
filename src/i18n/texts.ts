@@ -208,14 +208,21 @@ export const t = {
   },
 
   share: {
-    checking: "Connecting…",
+    checking: "Loading…",
+    connecting: "Connecting… keep working",
+    offline: "Offline – saved on this device",
     readonly: "Live results · updates automatically",
     live: "Shared with everyone",
     pending: "Sharing your changes…",
     publishing: "Updating all screens…",
     unshared: "Changes on this device are not shared yet",
-    error: "Sharing failed – check the connection",
+    error: "Not shared yet – retrying",
+    offlineHelp:
+      "No connection. Keep entering results: everything is saved on this device and shared automatically when the connection is back. Don't reload or close the page until then.",
+    errorHelp:
+      "The latest results could not be shared yet. Keep working – the app retries on its own. Tap Share now to try immediately.",
     shareNow: "Share now",
+    retry: "Retry",
   },
 
   saveFailed: "Saving failed – download a backup now (Setup → Backup).",

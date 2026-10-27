@@ -44,3 +44,21 @@ Courts are always shown with their real numbers (default 2, 3, 4, 5 – editable
   browser via `BroadcastChannel` (with `storage` events and polling as fallback).
 - **Backup:** Setup → Download backup (JSON). Import it on another device to continue.
 - All UI texts live in `src/i18n/texts.ts`.
+
+## claude.ai build (shared with players and the TV)
+
+```sh
+npm run build:artifact                                # → dist-artifact/padel-team-challenge.html
+node scripts/package-artifact.mjs path/to/state.json  # optional: embed the currently published results
+```
+
+Publish `dist-artifact/padel-team-challenge.html` as an artifact with the capabilities
+`artifact`, `user` and `downloads`. The organiser's view republishes the page with the
+results embedded; everybody else gets a read-only view that reloads to each new version.
+
+**Connection problems never block the organiser.** Once a device has been confirmed as
+the organiser's (first visit with a connection), it is editable immediately on every
+later visit, even if claude.ai does not answer. Every change is saved on the device first;
+sharing retries in the background (5 s → 60 s) and resumes automatically when the
+connection comes back. Do not reload the page while offline – claude.ai itself would
+not load; the open page keeps working.
