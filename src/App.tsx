@@ -113,6 +113,12 @@ function TabBar({ tabs, route }: { tabs: typeof TABS; route: Route }) {
         href={hrefFor("display")}
         target={hashMode ? undefined : "_blank"}
         rel="noreferrer"
+        onClick={(e) => {
+          // On claude.ai the TV screen opens inside the page; never leave #display in the address.
+          if (!hashMode) return;
+          e.preventDefault();
+          navigate("display");
+        }}
         className={`${item} text-ink2 hover:text-ink`}
       >
         <Icon name="tv" className="h-[22px] w-[22px]" />

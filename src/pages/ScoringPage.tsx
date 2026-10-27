@@ -23,11 +23,34 @@ import { dispatch, useReadOnly, useTournament } from "../store/store";
 /** true while the open court was pushed onto the history by this tab, so "back" can pop it. */
 let courtPushed = false;
 
+const COURT_KEY = "ui:court";
+/** Remember the open court per tab, so the reload after a publish returns to it. */
+function rememberCourt(i: number | null) {
+  try {
+    if (i == null) sessionStorage.removeItem(COURT_KEY);
+    else sessionStorage.setItem(COURT_KEY, String(i));
+  } catch {
+    /* ignore */
+  }
+}
+function sessionCourt(): number | null {
+  try {
+    const v = sessionStorage.getItem(COURT_KEY);
+    return v == null ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+
 export default function ScoringPage() {
   const state = useTournament();
   const [round, setRound] = useSessionState<RoundNo>("ui:round", activeRound(state));
   // The open court lives in the browser history, so the tablet's back button closes it.
-  const [courtIndex, setCourtIndex] = useState<number | null>(historyCourt);
+  const [courtIndex, setCourtIndexState] = useState<number | null>(() => historyCourt() ?? sessionCourt());
+  const setCourtIndex = (i: number | null) => {
+    rememberCourt(i);
+    setCourtIndexState(i);
+  };
   const now = useNow(500);
   const duels = duelsOfRound(state, round);
   const readOnly = useReadOnly();

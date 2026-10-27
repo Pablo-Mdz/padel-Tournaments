@@ -33,17 +33,49 @@ function readState(): HistoryState | null {
   return s && typeof s === "object" && "route" in s ? s : null;
 }
 
-let current: Route = readState()?.route ?? routeFromLocation();
+const ROUTE_KEY = "ui:route";
+
+/** Screen this tab was on – survives the reload that follows every publish. */
+function sessionRoute(): Route | null {
+  try {
+    const r = sessionStorage.getItem(ROUTE_KEY);
+    return r && r in ROUTE_PATHS ? (r as Route) : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberRoute(route: Route) {
+  try {
+    sessionStorage.setItem(ROUTE_KEY, route);
+  } catch {
+    /* ignore */
+  }
+}
+
+// In the single-file build the page reloads itself after every publish, so the tab's own
+// memory wins; a #display in the address only picks the screen on a tab's very first load
+// (e.g. a link opened on the TV).
+let current: Route = hashMode
+  ? (sessionRoute() ?? readState()?.route ?? routeFromLocation())
+  : (readState()?.route ?? routeFromLocation());
+rememberRoute(current);
 const listeners = new Set<() => void>();
 
 function set(route: Route) {
   current = route;
+  rememberRoute(route);
   listeners.forEach((l) => l());
 }
 
 /** Pushes a history entry so the browser/tablet back button steps back inside the app. */
 export function pushHistory(state: HistoryState, replace = false): boolean {
-  const url = hashMode ? undefined : base + ROUTE_PATHS[state.route];
+  // Hash mode: never leave a #display (or any screen) behind in the address.
+  const url = hashMode
+    ? window.location.hash
+      ? window.location.pathname + window.location.search
+      : undefined
+    : base + ROUTE_PATHS[state.route];
   try {
     if (replace) window.history.replaceState(state, "", url);
     else window.history.pushState(state, "", url);
@@ -80,7 +112,7 @@ export function hrefFor(route: Route): string {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("popstate", () => set(readState()?.route ?? routeFromLocation()));
+  window.addEventListener("popstate", () => set(readState()?.route ?? (hashMode ? "scoring" : routeFromLocation())));
   window.addEventListener("hashchange", () => set(routeFromLocation()));
 }
 
