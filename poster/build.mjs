@@ -9,6 +9,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import QRCode from "qrcode";
+import jsQR from "jsqr";
+import { PNG } from "pngjs";
+
+// Where the QR code on the poster points: the live results page.
+// Nothing on the poster spells the address out, players just scan it.
+const LIVE_URL = "https://claude.ai/artifact/2mq9ZsXNVi99zRDX7GD8yj";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -28,7 +35,19 @@ const fontCss = faces
   })
   .join("\n");
 
-const html = readFileSync(resolve(here, "poster.html"), "utf8").replace("__FONTS__", `<style>\n${fontCss}\n</style>`);
+// Error correction H leaves room for the 4PADEL mark in the middle of the code.
+const qrSvg = (
+  await QRCode.toString(LIVE_URL, {
+    type: "svg",
+    errorCorrectionLevel: "H",
+    margin: 0,
+    color: { dark: "#01135B", light: "#FFFFFF" },
+  })
+).replace(/\s(width|height)="[^"]*"/g, "");
+
+const html = readFileSync(resolve(here, "poster.html"), "utf8")
+  .replace("__FONTS__", `<style>\n${fontCss}\n</style>`)
+  .replaceAll("__QR__", qrSvg);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const page = await browser.newPage();
@@ -44,7 +63,13 @@ const overflow = await page.evaluate(() =>
 );
 if (overflow.some((px) => px > 0.5)) throw new Error(`content overflows its page: ${overflow.join(", ")} px`);
 
+// The logo sits on top of the code, so check the code still decodes to the URL.
+const shot = await page.locator(".qr-card").first().screenshot();
+const img = PNG.sync.read(shot);
+const decoded = jsQR(new Uint8ClampedArray(img.data), img.width, img.height);
+if (decoded?.data !== LIVE_URL) throw new Error(`QR does not scan back to the link (got: ${decoded?.data ?? "nothing"})`);
+
 const out = resolve(here, "Tennessee-Tournament.pdf");
 await page.pdf({ path: out, format: "A4", printBackground: true });
 await browser.close();
-console.log("written:", out, "- page overflow:", overflow.join(", "), "px");
+console.log("written:", out, "- page overflow:", overflow.join(", "), "px - QR verified");
