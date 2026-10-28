@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Padel Team Challenge</title>
+__FONTS__
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy: #01135B;
+    --navy2: #102E76;
+    --yellow: #ECE441;
+    --orange: #E28154;
+  }
+
+  body {
+    font-family: "Barlow", sans-serif;
+    color: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    padding: 9mm 11mm 7mm;
+    background: linear-gradient(170deg, var(--navy) 0%, var(--navy2) 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .page + .page { page-break-before: always; }
+
+  /* Decorative ball arcs, echoing the club flyer */
+  .page::after {
+    content: "";
+    position: absolute;
+    right: -40mm; bottom: -55mm;
+    width: 130mm; height: 130mm;
+    border-radius: 50%;
+    border: 2.2mm solid rgba(236, 228, 65, 0.10);
+    box-shadow: inset 0 0 0 14mm rgba(255,255,255,0.025);
+  }
+  .page > * { position: relative; z-index: 1; }
+
+  /* ---------- header ---------- */
+  header { border-bottom: 0.7mm solid var(--yellow); padding-bottom: 2.8mm; }
+  h1 {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 19mm;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--yellow);
+  }
+  .meta {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 4.9mm;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-top: 1.6mm;
+  }
+
+  /* ---------- motto ---------- */
+  .motto {
+    margin: 3.4mm 0;
+    background: var(--yellow);
+    color: var(--navy);
+    text-align: center;
+    padding: 2.2mm 3mm;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 6.8mm;
+    line-height: 1;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- columns ---------- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 5.5mm; flex: 1; min-height: 0; }
+  .col { display: flex; flex-direction: column; gap: 3.4mm; }
+
+  h2 {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 5.8mm;
+    line-height: 1;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 1.4mm;
+  }
+  h2 .sub {
+    display: block;
+    font-size: 3.6mm;
+    letter-spacing: 0.05em;
+    color: var(--orange);
+    margin-top: 0.8mm;
+  }
+  p, li { font-size: 3.85mm; line-height: 1.42; }
+  strong { font-weight: 700; color: var(--yellow); }
+
+  /* the four matches */
+  .matches { display: flex; gap: 1.6mm; margin-top: 2.2mm; }
+  .match {
+    flex: 1;
+    background: rgba(255,255,255,0.10);
+    border-radius: 2mm;
+    padding: 2mm 1mm 2.2mm;
+    text-align: center;
+  }
+  .match .n {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 4.8mm;
+    color: var(--orange);
+    line-height: 1;
+  }
+  .match .t {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 4.1mm;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-top: 0.6mm;
+  }
+
+  /* ---------- scoring box (the hero) ---------- */
+  .scoring {
+    border: 0.7mm solid var(--yellow);
+    border-radius: 3mm;
+    padding: 3.2mm;
+    background: rgba(1, 19, 91, 0.45);
+  }
+  .pts { display: flex; gap: 2.6mm; margin: 2.4mm 0; }
+  .pt { display: flex; align-items: center; gap: 2.4mm; }
+  /* the "+2" label is the longer of the two, so give it more room */
+  .pt:first-child { flex: 0.8; }
+  .pt:last-child { flex: 1.2; }
+  .pt .big {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 12.5mm;
+    line-height: 0.85;
+    color: var(--yellow);
+  }
+  .pt .lbl { font-size: 3.7mm; line-height: 1.25; }
+  .serve {
+    background: rgba(226, 129, 84, 0.18);
+    border-left: 1mm solid var(--orange);
+    padding: 2.6mm 3mm;
+    font-size: 3.8mm;
+    line-height: 1.38;
+    border-radius: 0 1.5mm 1.5mm 0;
+  }
+  .time {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 4.2mm;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  /* ---------- schedule ---------- */
+  table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
+  td { padding: 1.15mm 0; font-size: 3.8mm; border-bottom: 0.2mm solid rgba(255,255,255,0.14); }
+  td.h {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 4.4mm;
+    letter-spacing: 0.04em;
+    color: var(--yellow);
+    width: 27mm;
+    white-space: nowrap;
+  }
+  tr.hi td { color: #fff; }
+  tr.hi td.h { color: var(--yellow); }
+  tr.pause td { opacity: 0.6; }
+
+  /* ---------- table legend ---------- */
+  .legend { display: flex; flex-direction: column; gap: 0.9mm; margin-top: 1.6mm; }
+  .legend div { display: flex; gap: 2.4mm; align-items: baseline; font-size: 3.75mm; }
+  .legend .k {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 4.6mm;
+    color: var(--yellow);
+    min-width: 14mm;
+    letter-spacing: 0.03em;
+  }
+  .legend .k.dim { color: var(--orange); }
+
+  .note {
+    margin-top: 2mm;
+    font-size: 3.55mm;
+    line-height: 1.38;
+    color: rgba(255,255,255,0.82);
+  }
+
+  footer {
+    margin-top: auto;
+    padding-top: 2.4mm;
+    border-top: 0.4mm solid rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 4.2mm;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+  footer .courts { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<!-- ============================ DEUTSCH ============================ -->
+<section class="page">
+  <header>
+    <h1>Padel Team<br>Challenge</h1>
+    <div class="meta">4PADEL Berlin · Samstag, 31.10.2026 · 12:00–16:00 Uhr</div>
+  </header>
+
+  <div class="motto">Alle Punkte zählen für das Gesamtteam</div>
+
+  <div class="cols">
+    <div class="col">
+      <section>
+        <h2>Dein Team</h2>
+        <p>4 Spieler:innen – <strong>2 Frauen und 2 Männer</strong>. Insgesamt 8 Teams, aufgeteilt in Gruppe A und Gruppe B.</p>
+      </section>
+
+      <section>
+        <h2>Eine Begegnung = 4 Spiele</h2>
+        <p>Euer Team trifft auf ein anderes Team. Vier Spiele nacheinander auf demselben Platz:</p>
+        <div class="matches">
+          <div class="match"><div class="n">1</div><div class="t">Damen</div></div>
+          <div class="match"><div class="n">2</div><div class="t">Herren</div></div>
+          <div class="match"><div class="n">3</div><div class="t">Mixed 1</div></div>
+          <div class="match"><div class="n">4</div><div class="t">Mixed 2</div></div>
+        </div>
+        <p style="margin-top:2mm">Über den Tag spielt ihr <strong>3 Begegnungen</strong>.</p>
+      </section>
+
+      <section>
+        <h2>Das Wichtigste</h2>
+        <p>Es gewinnt das Team mit den <strong>meisten Punkten insgesamt</strong> aus den 3 Begegnungen – nicht das Team mit den meisten gewonnenen Begegnungen.</p>
+        <p class="note">Auch wenn ihr hinten liegt, zählt jeder Punkt weiter für euer Gesamtergebnis. Also bis zum Schluss spielen.</p>
+      </section>
+
+      <section>
+        <h2>Nach jedem Spiel</h2>
+        <p>Kommt kurz zur <strong>Rezeption</strong> und sagt euer Ergebnis, zum Beispiel „10 zu 15". Es erscheint sofort auf dem Bildschirm.</p>
+      </section>
+
+      <section>
+        <h2>Bildschirm lesen</h2>
+        <p>Der Fernseher wechselt zwischen den Live-Ergebnissen, der <strong>Gesamttabelle</strong> (gelb umrandet) und den Gruppentabellen.</p>
+        <div class="legend">
+          <div><span class="k">PF</span><span>eure Punkte – die Spalte zählt</span></div>
+          <div><span class="k dim">PA</span><span>Punkte der Gegner</span></div>
+          <div><span class="k dim">+/−</span><span>Differenz</span></div>
+          <div><span class="k dim">P W D L</span><span>Begegnungen: gespielt, gewonnen, unentschieden, verloren</span></div>
+        </div>
+        <p class="note">Siege entscheiden das Turnier nicht – nur die Punkte. Bei Punktgleichheit zählt die Differenz.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="scoring">
+        <h2>Die Punkte<span class="sub">Keine normale Padel-Zählung</span></h2>
+        <div class="time">15 Min. pro Spiel in Runde 1 + 2 · 20 Min. in Runde 3</div>
+        <div class="pts">
+          <div class="pt"><span class="big">+1</span><span class="lbl">Fehler der<br>Gegner</span></div>
+          <div class="pt"><span class="big">+2</span><span class="lbl">Winner – Gegner berühren<br>den Ball nicht</span></div>
+        </div>
+        <div class="serve">Nur <strong>ein Aufschlag</strong> pro Punkt, kein zweiter. Der Aufschlag rotiert reihum durch alle 4 Spieler:innen, wie im Tie-Break.</div>
+        <p style="margin-top:2.4mm">Die Punkte aus allen 4 Spielen werden zum Teamergebnis addiert.</p>
+      </section>
+
+      <section>
+        <h2>Zeitplan</h2>
+        <table>
+          <tr><td class="h">11:45</td><td>Check-in</td></tr>
+          <tr class="hi"><td class="h">12:00–13:00</td><td>Runde 1</td></tr>
+          <tr class="pause"><td class="h">13:00–13:15</td><td>Pause</td></tr>
+          <tr class="hi"><td class="h">13:15–14:15</td><td>Runde 2</td></tr>
+          <tr class="pause"><td class="h">14:15–14:30</td><td>Pause</td></tr>
+          <tr class="hi"><td class="h">14:30–15:50</td><td>Runde 3</td></tr>
+          <tr><td class="h">15:50–16:00</td><td>Siegerehrung</td></tr>
+        </table>
+        <p class="note">Runde 1 + 2 innerhalb eurer Gruppe. <strong>Runde 3 über Kreuz:</strong> 1. Gruppe A gegen 1. Gruppe B, 2. gegen 2. und so weiter.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    <span>Viel Spaß &amp; fair play</span>
+    <span class="courts">Platz 2 · 3 · 4 · 5</span>
+  </footer>
+</section>
+
+<!-- ============================ ESPAÑOL ============================ -->
+<section class="page" lang="es">
+  <header>
+    <h1>Padel Team<br>Challenge</h1>
+    <div class="meta">4PADEL Berlin · Sábado, 31.10.2026 · 12:00–16:00</div>
+  </header>
+
+  <div class="motto">Todos los puntos cuentan para el equipo</div>
+
+  <div class="cols">
+    <div class="col">
+      <section>
+        <h2>Tu equipo</h2>
+        <p>4 jugadores: <strong>2 mujeres y 2 hombres</strong>. En total 8 equipos, repartidos en Grupo A y Grupo B.</p>
+      </section>
+
+      <section>
+        <h2>Un duelo = 4 partidos</h2>
+        <p>Tu equipo se enfrenta a otro equipo. Cuatro partidos seguidos en la misma pista:</p>
+        <div class="matches">
+          <div class="match"><div class="n">1</div><div class="t">Damas</div></div>
+          <div class="match"><div class="n">2</div><div class="t">Caballeros</div></div>
+          <div class="match"><div class="n">3</div><div class="t">Mixto 1</div></div>
+          <div class="match"><div class="n">4</div><div class="t">Mixto 2</div></div>
+        </div>
+        <p style="margin-top:2mm">A lo largo del día jugáis <strong>3 duelos</strong>.</p>
+      </section>
+
+      <section>
+        <h2>Lo más importante</h2>
+        <p>Gana el equipo que <strong>más puntos sume en total</strong> en los 3 duelos, no el que gane más duelos.</p>
+        <p class="note">Aunque vayáis perdiendo, cada punto sigue sumando para vuestro total. Se juega hasta el final.</p>
+      </section>
+
+      <section>
+        <h2>Al terminar cada partido</h2>
+        <p>Pasad un momento por <strong>recepción</strong> y decid el resultado, por ejemplo "10 a 15". Aparece al instante en la pantalla.</p>
+      </section>
+
+      <section>
+        <h2>Cómo leer la pantalla</h2>
+        <p>La tele va rotando entre los marcadores en vivo, la <strong>tabla general</strong> (con marco amarillo) y las tablas de grupo.</p>
+        <div class="legend">
+          <div><span class="k">PF</span><span>vuestros puntos – la columna que importa</span></div>
+          <div><span class="k dim">PA</span><span>puntos del rival</span></div>
+          <div><span class="k dim">+/−</span><span>diferencia</span></div>
+          <div><span class="k dim">P W D L</span><span>duelos: jugados, ganados, empatados, perdidos</span></div>
+        </div>
+        <p class="note">Las victorias no deciden el torneo, solo los puntos. Si hay empate a puntos, decide la diferencia.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="scoring">
+        <h2>Los puntos<span class="sub">No es el marcador normal de pádel</span></h2>
+        <div class="time">15 min por partido en rondas 1 y 2 · 20 min en ronda 3</div>
+        <div class="pts">
+          <div class="pt"><span class="big">+1</span><span class="lbl">Error del<br>rival</span></div>
+          <div class="pt"><span class="big">+2</span><span class="lbl">Winner – el rival no llega<br>a tocar la bola</span></div>
+        </div>
+        <div class="serve">Un <strong>solo saque</strong> por punto, no hay segundo. El saque va rotando entre los 4 jugadores, como en un tie-break.</div>
+        <p style="margin-top:2.4mm">Los puntos de los 4 partidos se suman al marcador del equipo.</p>
+      </section>
+
+      <section>
+        <h2>Horario</h2>
+        <table>
+          <tr><td class="h">11:45</td><td>Check-in</td></tr>
+          <tr class="hi"><td class="h">12:00–13:00</td><td>Ronda 1</td></tr>
+          <tr class="pause"><td class="h">13:00–13:15</td><td>Pausa</td></tr>
+          <tr class="hi"><td class="h">13:15–14:15</td><td>Ronda 2</td></tr>
+          <tr class="pause"><td class="h">14:15–14:30</td><td>Pausa</td></tr>
+          <tr class="hi"><td class="h">14:30–15:50</td><td>Ronda 3</td></tr>
+          <tr><td class="h">15:50–16:00</td><td>Premiación</td></tr>
+        </table>
+        <p class="note">Rondas 1 y 2 dentro de tu grupo. <strong>Ronda 3 cruzada:</strong> 1º del Grupo A contra 1º del Grupo B, 2º contra 2º, y así.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    <span>A disfrutar &amp; fair play</span>
+    <span class="courts">Pista 2 · 3 · 4 · 5</span>
+  </footer>
+</section>
+
+</body>
+</html>
