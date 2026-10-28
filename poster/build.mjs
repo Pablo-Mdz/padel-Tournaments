@@ -44,7 +44,7 @@ const overflow = await page.evaluate(() =>
 );
 if (overflow.some((px) => px > 0.5)) throw new Error(`content overflows its page: ${overflow.join(", ")} px`);
 
-const out = resolve(here, "Padel-Team-Challenge.pdf");
+const out = resolve(here, "Tennessee-Tournament.pdf");
 await page.pdf({ path: out, format: "A4", printBackground: true });
 await browser.close();
 console.log("written:", out, "- page overflow:", overflow.join(", "), "px");
