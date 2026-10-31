@@ -187,6 +187,8 @@ export const t = {
     finished: "Finished",
     notStarted: "Not started",
     exit: "Back to the app",
+    scanTitle: "Live on your phone",
+    scanHint: "Scan with your camera",
   },
 
   csv: {
