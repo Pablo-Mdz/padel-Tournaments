@@ -49,11 +49,14 @@ export default function RoundClock({ state, round, readOnly }: { state: Tourname
     <div className="card flex w-full flex-col gap-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow">
-          {t.timer.roundClock}
-          {otherRound ? ` · ${t.round(clock.round)}` : ""}
+          {readOnly ? `${t.round(clock.round)} · ${t.timer.timeLeft}` : t.timer.roundClock}
+          {!readOnly && otherRound ? ` · ${t.round(clock.round)}` : ""}
         </span>
         {info.phase === "warning" && <span className="chip bg-warn/15 !py-0.5 text-[12px] text-warn">{t.timer.twoMinutes}</span>}
         {info.phase === "over" && <span className="chip bg-bad/15 !py-0.5 text-[12px] text-bad">{t.timer.overtime}</span>}
+        {readOnly && !info.running && info.phase !== "over" && (
+          <span className="chip bg-fill/[0.14] !py-0.5 text-[12px] text-ink2">{t.timer.paused}</span>
+        )}
       </div>
       {!readOnly && (
         <Segmented<number>

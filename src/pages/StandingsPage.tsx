@@ -1,3 +1,4 @@
+import RoundClock from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
 import { Icon, PageTitle, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
@@ -10,7 +11,13 @@ export default function StandingsPage() {
   const readOnly = useReadOnly();
   return (
     <div className="flex flex-col gap-5">
-      <PageTitle title={t.nav.standings} subtitle={t.standings.overallHint} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <PageTitle title={t.nav.standings} subtitle={t.standings.overallHint} />
+        {/* Time left in the round – view only here; the organiser runs it from Scoring. */}
+        <div className="empty:hidden sm:w-[320px] sm:shrink-0">
+          <RoundClock state={state} round={state.roundClock.round} readOnly />
+        </div>
+      </div>
 
       <section className="card relative overflow-hidden p-4 sm:p-5">
         {/* A thin band in club yellow marks the table that decides the champion. */}
