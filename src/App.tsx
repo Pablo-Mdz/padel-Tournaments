@@ -2,6 +2,7 @@ import { Icon, IconName, Notice } from "./components/ui";
 import { t } from "./i18n/texts";
 import DisplayPage from "./pages/DisplayPage";
 import ResultsPage from "./pages/ResultsPage";
+import PosterPage from "./pages/PosterPage";
 import RulesPage from "./pages/RulesPage";
 import ScoringPage from "./pages/ScoringPage";
 import SetupPage from "./pages/SetupPage";
@@ -24,6 +25,7 @@ export default function App() {
   const share = useShareStatus();
 
   if (route === "display") return <DisplayPage />;
+  if (route === "poster") return <PosterPage />;
 
   const tabs = TABS.filter((tab) => !(readOnly && tab.route === "setup"));
   const page = route === "setup" && readOnly ? "standings" : route;

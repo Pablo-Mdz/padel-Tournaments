@@ -30,7 +30,8 @@ Netlify via `public/_redirects`); `#/display` works on any host.
 `src/formats/` holds one format per file — today only the **Tennessee Tournament**
 (teams of four, duels of four matches, a winner on points rather than duels won).
 A format owns its name and its rules text, which is written from the live settings so
-the rules page always matches the tournament that is set up. Further formats are meant
+the rules page and the printed poster always match the tournament that is set up.
+Sections marked `poster: true` are the ones that go on the poster. Further formats are meant
 to sit beside it in `FORMATS`.
 
 ## Screens
@@ -39,6 +40,7 @@ to sit beside it in `FORMATS`.
 |--------------|---------|
 | `/`          | Scoring: 4 courts of the active round, tap a court to score the duel |
 | `/rules`     | How the Tennessee Tournament is played, written from the live settings |
+| `/poster`    | The same rules as a one-page A4 poster; print it or save it as a PDF |
 | `/standings` | Overall table (decides the champion) + qualifying table, manual tie resolution |
 | `/results`   | Final ranking 1–8 with points per round and per match type, CSV/JSON export |
 | `/setup`     | Number of teams, players, courts, match lengths, schedule, backup, reset |

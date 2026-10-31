@@ -1,5 +1,6 @@
 import QrCode, { appUrl } from "../components/QrCode";
 import { Icon, PageTitle, stagger } from "../components/ui";
+import { navigate } from "../router";
 import { currentFormat } from "../formats";
 import { t } from "../i18n/texts";
 import { useTournament } from "../store/store";
@@ -16,7 +17,12 @@ export default function RulesPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageTitle title={format.name} subtitle={format.tagline} />
+      <PageTitle title={format.name} subtitle={format.tagline}>
+        <button className="btn-gray" onClick={() => navigate("poster")}>
+          <Icon name="download" className="h-[18px] w-[18px]" />
+          {t.poster.open}
+        </button>
+      </PageTitle>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">

@@ -23,6 +23,7 @@ export const tennessee: TournamentFormat = {
     return [
       {
         id: "team",
+        poster: true,
         title: "Your team",
         lead: `Four players: two women and two men. ${teams} teams play, on ${courts} courts.`,
         points: [
@@ -32,6 +33,7 @@ export const tennessee: TournamentFormat = {
       },
       {
         id: "duel",
+        poster: true,
         title: "One duel = four matches",
         lead: "Your team faces another team and plays four matches back to back on the same court:",
         points: [
@@ -43,6 +45,7 @@ export const tennessee: TournamentFormat = {
       },
       {
         id: "points",
+        poster: true,
         title: "The points — not normal padel scoring",
         lead: sameLength
           ? `Each match lasts ${r1} minutes. You score as many points as you can in that time.`
@@ -57,6 +60,7 @@ export const tennessee: TournamentFormat = {
       },
       {
         id: "winning",
+        poster: true,
         title: "What decides the tournament",
         lead: "The team with the most points over its three duels wins — not the team that wins the most duels.",
         points: [
@@ -66,6 +70,7 @@ export const tennessee: TournamentFormat = {
       },
       {
         id: "rounds",
+        poster: true,
         title: "The three rounds",
         points: [
           "Rounds 1 and 2 are fixed. They are drawn so that you never face the same team twice.",
@@ -75,6 +80,7 @@ export const tennessee: TournamentFormat = {
       },
       {
         id: "reporting",
+        poster: true,
         title: "After each match",
         lead: 'Come by reception and tell us the result, for example "10 to 15".',
         points: ["It is on the screen within seconds.", "Got it wrong? Tell us — it can be corrected at any time."],

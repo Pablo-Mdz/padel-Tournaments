@@ -267,3 +267,61 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* ---------------------------------------------------------------------------
+   Printable poster (/poster). On screen it is shown as a white A4 sheet;
+   printing it gives a one-page PDF with no app chrome around it. */
+.poster-screen {
+  min-height: 100vh;
+  background: rgb(var(--canvas));
+  padding-bottom: 32px;
+}
+
+.poster-sheet {
+  /* A4 minus a 14 mm margin on every side. */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto 0;
+  padding: 14mm;
+  background: #fff;
+  color: rgb(10 15 44);
+  box-shadow: 0 10px 40px -16px rgb(1 19 91 / 0.45);
+}
+
+.poster-sheet .bg-yellow-dot {
+  background: #ece441;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  /* The sheet is the page: nothing else prints, and colours are kept. */
+  html,
+  body,
+  #root,
+  .poster-screen {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .poster-sheet {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

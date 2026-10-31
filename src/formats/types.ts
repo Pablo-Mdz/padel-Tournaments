@@ -9,6 +9,8 @@ export interface RuleSection {
   lead?: ReactNode;
   /** Bullet points; each one is a sentence the players can read off a wall. */
   points?: ReactNode[];
+  /** Goes on the printed poster too; the rest is only on the rules page. */
+  poster?: boolean;
 }
 
 /**

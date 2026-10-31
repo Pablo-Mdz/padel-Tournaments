@@ -18,6 +18,15 @@ export const t = {
     display: "TV",
   },
 
+  poster: {
+    title: "Poster",
+    open: "Print a poster",
+    print: "Print",
+    back: "Back to the rules",
+    hint: "Prints on one A4 page. Choose \u201cSave as PDF\u201d to keep a file.",
+    qr: "Live results",
+  },
+
   rules: {
     schedule: "Schedule of the day",
     shareTitle: "Share these rules",

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-export type Route = "scoring" | "standings" | "results" | "rules" | "setup" | "display";
+export type Route = "scoring" | "standings" | "results" | "rules" | "poster" | "setup" | "display";
 
 export const ROUTE_PATHS: Record<Route, string> = {
   scoring: "/",
@@ -8,6 +8,7 @@ export const ROUTE_PATHS: Record<Route, string> = {
   setup: "/setup",
   results: "/results",
   rules: "/rules",
+  poster: "/poster",
   display: "/display",
 };
 
