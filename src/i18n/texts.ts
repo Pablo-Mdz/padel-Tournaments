@@ -14,7 +14,14 @@ export const t = {
     standings: "Standings",
     setup: "Setup",
     results: "Results",
+    rules: "Rules",
     display: "TV",
+  },
+
+  rules: {
+    schedule: "Schedule of the day",
+    shareTitle: "Share these rules",
+    shareHint: "Scan to open the live results and these rules on a phone.",
   },
 
   court: (n: number) => `Court ${n}`,

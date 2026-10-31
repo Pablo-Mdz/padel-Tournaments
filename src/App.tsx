@@ -2,6 +2,7 @@ import { Icon, IconName, Notice } from "./components/ui";
 import { t } from "./i18n/texts";
 import DisplayPage from "./pages/DisplayPage";
 import ResultsPage from "./pages/ResultsPage";
+import RulesPage from "./pages/RulesPage";
 import ScoringPage from "./pages/ScoringPage";
 import SetupPage from "./pages/SetupPage";
 import StandingsPage from "./pages/StandingsPage";
@@ -12,6 +13,7 @@ const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
   { route: "scoring", label: t.nav.scoring, icon: "ball" },
   { route: "standings", label: t.nav.standings, icon: "chart" },
   { route: "results", label: t.nav.results, icon: "trophy" },
+  { route: "rules", label: t.nav.rules, icon: "flag" },
   { route: "setup", label: t.nav.setup, icon: "sliders" },
 ];
 
@@ -72,6 +74,7 @@ export default function App() {
         {page === "scoring" && <ScoringPage />}
         {page === "standings" && <StandingsPage />}
         {page === "results" && <ResultsPage />}
+        {page === "rules" && <RulesPage />}
         {page === "setup" && <SetupPage />}
       </main>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
-import { LIVE_URL, QR_PATH, QR_SIZE } from "../components/liveQr";
+import QrCode, { appUrl } from "../components/QrCode";
 import { RoundClockTV } from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
 import { Icon, stagger } from "../components/ui";
@@ -173,21 +173,17 @@ export default function DisplayPage() {
   );
 }
 
-/** QR code to the live page, so players can follow the results on their own phones. */
+/**
+ * QR code to this very page, so players can follow the results on their own phones.
+ * It is built from the address the app is served from, so it keeps working on any host.
+ */
 function LiveQr() {
+  const url = appUrl();
+  if (!url) return null;
   return (
     <aside className="flex w-[27vh] shrink-0 flex-col justify-end">
       <div className="flex flex-col items-center gap-[1vh] rounded-[2.4vh] bg-white p-[1.4vh] text-navy shadow-[0_10px_24px_-12px_rgb(0_0_0/0.5)]">
-        <svg
-          viewBox={`-2 -2 ${QR_SIZE + 4} ${QR_SIZE + 4}`}
-          className="block aspect-square w-full"
-          shapeRendering="crispEdges"
-          role="img"
-          aria-label={LIVE_URL}
-        >
-          <rect x={-2} y={-2} width={QR_SIZE + 4} height={QR_SIZE + 4} fill="#fff" />
-          <path d={QR_PATH} fill="#01135B" />
-        </svg>
+        <QrCode text={url} className="block aspect-square w-full" />
         <div className="text-center leading-tight">
           <div className="whitespace-nowrap text-[2.2vh] font-bold">{t.display.scanTitle}</div>
           <div className="text-[1.5vh] font-medium text-navy/70">{t.display.scanHint}</div>

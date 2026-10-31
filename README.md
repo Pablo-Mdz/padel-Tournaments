@@ -25,11 +25,20 @@ npm test           # unit tests for scoring & standings logic
 Serve `dist/` from any static host. `/display` needs SPA fallback (included for
 Netlify via `public/_redirects`); `#/display` works on any host.
 
+## Tournament formats
+
+`src/formats/` holds one format per file — today only the **Tennessee Tournament**
+(teams of four, duels of four matches, a winner on points rather than duels won).
+A format owns its name and its rules text, which is written from the live settings so
+the rules page always matches the tournament that is set up. Further formats are meant
+to sit beside it in `FORMATS`.
+
 ## Screens
 
 | Route        | Purpose |
 |--------------|---------|
 | `/`          | Scoring: 4 courts of the active round, tap a court to score the duel |
+| `/rules`     | How the Tennessee Tournament is played, written from the live settings |
 | `/standings` | Overall table (decides the champion) + qualifying table, manual tie resolution |
 | `/results`   | Final ranking 1–8 with points per round and per match type, CSV/JSON export |
 | `/setup`     | Number of teams, players, courts, match lengths, schedule, backup, reset |

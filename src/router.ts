@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from "react";
 
-export type Route = "scoring" | "standings" | "setup" | "results" | "display";
+export type Route = "scoring" | "standings" | "results" | "rules" | "setup" | "display";
 
 export const ROUTE_PATHS: Record<Route, string> = {
   scoring: "/",
   standings: "/standings",
   setup: "/setup",
   results: "/results",
+  rules: "/rules",
   display: "/display",
 };
 
