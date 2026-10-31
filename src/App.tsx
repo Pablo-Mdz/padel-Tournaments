@@ -1,3 +1,4 @@
+import Logo from "./components/Logo";
 import { Icon, IconName, Notice } from "./components/ui";
 import { t } from "./i18n/texts";
 import DisplayPage from "./pages/DisplayPage";
@@ -34,9 +35,11 @@ export default function App() {
     <div className="min-h-screen pb-[calc(96px+env(safe-area-inset-bottom))]">
       <header className="mx-auto flex max-w-[1180px] items-center gap-3 px-4 pt-[calc(14px+env(safe-area-inset-top))] sm:px-6">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-navy text-yellow">
-            <Icon name="ball" className="h-[18px] w-[18px]" />
-          </span>
+          <Logo
+            logo={state.settings.logo}
+            className="h-8 w-8 shrink-0 rounded-[10px]"
+            iconClassName="h-[18px] w-[18px]"
+          />
           <div className="min-w-0 leading-tight">
             <div className="truncate text-[15px] font-semibold">{state.settings.title}</div>
             <div className="truncate text-[12px] text-ink2">

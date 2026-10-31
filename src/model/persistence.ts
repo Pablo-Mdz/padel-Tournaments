@@ -85,6 +85,8 @@ export function parseState(raw: string | unknown): TournamentState {
       ...DEFAULT_SETTINGS,
       ...s,
       teamCount,
+      // Only a data URL is accepted; anything else (a path, a remote URL) is dropped.
+      logo: typeof s.logo === "string" && s.logo.startsWith("data:image/") ? s.logo : null,
       courts: fitCourts(
         Array.isArray(s.courts) && s.courts.every((c) => typeof c === "number")
           ? (s.courts as number[])

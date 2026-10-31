@@ -29,6 +29,7 @@ export default function PosterPage() {
 
       <article className="poster-sheet">
         <header className="flex items-start gap-5 border-b-2 border-navy pb-4">
+          {settings.logo && <img src={settings.logo} alt="" className="h-[18mm] w-[18mm] shrink-0 object-contain" />}
           <div className="min-w-0 flex-1">
             <p className="text-[11pt] font-semibold uppercase tracking-[0.14em] text-navy/60">{format.name}</p>
             <h1 className="mt-1 text-[30pt] font-bold leading-[1.05] tracking-[-0.02em] text-navy">{settings.title}</h1>

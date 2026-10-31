@@ -416,3 +416,16 @@ describe("round clock", () => {
     expect(parseState(raw).roundClock).toEqual({ startedAt: null, elapsedMs: 0, minutes: null, round: 1 });
   });
 });
+
+describe("club logo", () => {
+  it("keeps an uploaded data URL and drops anything else", () => {
+    const png = "data:image/png;base64,iVBORw0KGgo=";
+    let s = run(createInitialState(NOW), { type: "updateSettings", settings: { logo: png } });
+    expect(parseState(JSON.stringify(s)).settings.logo).toBe(png);
+
+    const raw = JSON.parse(JSON.stringify(s));
+    raw.settings.logo = "https://example.com/logo.png";
+    expect(parseState(raw).settings.logo).toBeNull();
+    expect(parseState(JSON.stringify(createInitialState(NOW))).settings.logo).toBeNull();
+  });
+});

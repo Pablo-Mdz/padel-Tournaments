@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   date: "Saturday, 31.10.2026",
   teamCount: 8,
   courts: [2, 3, 4, 5],
+  logo: null,
   matchMinutes: [15, 15, 20],
   schedule: [
     { from: "11:45", to: "12:00", label: "Check-in" },

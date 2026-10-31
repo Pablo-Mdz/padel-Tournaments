@@ -43,7 +43,7 @@ to sit beside it in `FORMATS`.
 | `/poster`    | The same rules as a one-page A4 poster; print it or save it as a PDF |
 | `/standings` | Overall table (decides the champion) + qualifying table, manual tie resolution |
 | `/results`   | Final ranking 1–8 with points per round and per match type, CSV/JSON export |
-| `/setup`     | Number of teams, players, courts, match lengths, schedule, backup, reset |
+| `/setup`     | Number of teams, players, club logo, courts, match lengths, schedule, backup, reset |
 | `/display`   | TV screen, rotates every 15 s: live scores → overall → qualifying |
 
 Courts are always shown with their real numbers (default 2, 3, 4, 5 – editable in Setup).

@@ -1,4 +1,6 @@
 import { ReactNode, useRef, useState } from "react";
+import Logo from "../components/Logo";
+import { LogoError, readLogoFile } from "../logo";
 import { Icon, Notice, PageTitle, Segmented, stagger } from "../components/ui";
 import { downloadFile, timestamp } from "../download";
 import { t } from "../i18n/texts";
@@ -76,6 +78,55 @@ function TeamCountPicker({ state }: { state: TournamentState }) {
         >
           {t.setup.teamCountConfirm(pending)}
         </Notice>
+      )}
+    </div>
+  );
+}
+
+/** Upload a club mark; it replaces the app's ball everywhere it is shown. */
+function LogoField({ settings, update }: { settings: Settings; update: (s: Partial<Settings>) => void }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    try {
+      update({ logo: await readLogoFile(file) });
+    } catch (e) {
+      setError(e instanceof LogoError && e.message === "too-large" ? t.setup.logoTooLarge : t.setup.logoUnreadable);
+    }
+    if (input.current) input.current.value = "";
+  };
+
+  return (
+    <div>
+      <span className="label">{t.setup.logo}</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <Logo logo={settings.logo} className="h-14 w-14 shrink-0 rounded-[14px]" iconClassName="h-7 w-7" />
+        <input
+          ref={input}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+          aria-label={t.setup.logo}
+          className="hidden"
+          onChange={(e) => void pick(e.target.files?.[0])}
+        />
+        <button className="btn-gray" onClick={() => input.current?.click()}>
+          <Icon name="upload" className="h-[18px] w-[18px]" />
+          {t.setup.logoPick}
+        </button>
+        {settings.logo && (
+          <button className="btn-plain" onClick={() => update({ logo: null })}>
+            {t.setup.logoRemove}
+          </button>
+        )}
+        <span className="text-[13px] text-ink2">{t.setup.logoHint}</span>
+      </div>
+      {error && (
+        <p className="mt-2 text-[14px] font-semibold text-bad" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );
@@ -170,6 +221,7 @@ function SettingsSection({ settings }: { settings: Settings }) {
             <input className="field" value={settings.date} onChange={(e) => update({ date: e.target.value })} />
           </Field>
         </div>
+        <LogoField settings={settings} update={update} />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
             <span className="label">{t.setup.courts}</span>

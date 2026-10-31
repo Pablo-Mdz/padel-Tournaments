@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
+import Logo from "../components/Logo";
 import QrCode, { appUrl } from "../components/QrCode";
 import { RoundClockTV } from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
@@ -90,9 +91,11 @@ export default function DisplayPage() {
       )}
 
       <header className="flex items-center gap-[1.4vw]">
-        <span className="grid h-[7vh] w-[7vh] place-items-center rounded-[1.8vh] bg-yellow text-navy">
-          <Icon name="ball" className="h-[4.4vh] w-[4.4vh]" />
-        </span>
+        <Logo
+          logo={state.settings.logo}
+          className="h-[7vh] w-[7vh] shrink-0 rounded-[1.8vh]"
+          iconClassName="h-[4.4vh] w-[4.4vh]"
+        />
         <div className="leading-tight">
           <div className="text-[5vh] font-bold tracking-[-0.02em]">{state.settings.title}</div>
           <div className="text-[2.2vh] font-medium text-ink2">

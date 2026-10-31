@@ -60,6 +60,8 @@ export interface Settings {
   teamCount: TeamCount;
   /** Real court numbers of the club, one per court in play. */
   courts: number[];
+  /** Club or event logo as a data URL; null falls back to the app's own mark. */
+  logo: string | null;
   /** Match length in minutes per round (index 0 = round 1). */
   matchMinutes: [number, number, number];
   schedule: ScheduleItem[];
