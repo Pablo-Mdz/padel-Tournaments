@@ -1,7 +1,16 @@
-# Padel Team Challenge – 4PADEL Berlin
+# Padel Team Challenge
 
-Live scoring app for the team tournament on Saturday 31.10.2026 (12:00–16:00).
-A tablet at reception enters the points; a TV in the club shows `/display`.
+Live scoring app for a team padel tournament. A tablet enters the points,
+players follow the standings on their phones and a TV shows `/display`.
+
+Built for the 4PADEL Berlin team tournament on Saturday 31.10.2026 (12:00–16:00),
+and reusable for any other tournament: the teams, date, courts and match length
+are all set in the app.
+
+**Free and open for public use.** This is a personal, non-commercial side project
+by [Pablo Cigoy](https://www.pablocigoy.com) — anyone is welcome to use it to run
+their own tournament. Nothing is sold here, there are no ads and no payments.
+
 
 ## Run
 

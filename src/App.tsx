@@ -75,6 +75,18 @@ export default function App() {
         {page === "setup" && <SetupPage />}
       </main>
 
+      <footer className="mx-auto mt-8 w-full max-w-[1180px] px-4 pb-2 text-center text-[13px] text-ink2 sm:px-6">
+        {t.credit.by}{" "}
+        <a
+          href={t.credit.url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-tint underline-offset-2 hover:underline"
+        >
+          {t.credit.name}
+        </a>
+      </footer>
+
       <TabBar tabs={tabs} route={page} />
     </div>
   );

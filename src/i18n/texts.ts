@@ -7,6 +7,7 @@ export const t = {
   appName: "Padel Team Challenge",
   club: "4PADEL Berlin",
   motto: "Every point counts for the whole team",
+  credit: { by: "Created by", name: "Pablo Cigoy", url: "https://www.pablocigoy.com" },
 
   nav: {
     scoring: "Scoring",
