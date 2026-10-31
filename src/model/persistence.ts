@@ -1,5 +1,5 @@
-import { DEFAULT_SETTINGS, emptyMatches } from "./tournament";
-import { Duel, MATCH_TYPES, Settings, Team, TournamentState } from "./types";
+import { DEFAULT_SETTINGS, courtCount, emptyMatches, fitCourts } from "./tournament";
+import { Duel, MATCH_TYPES, Settings, TEAM_COUNTS, Team, TeamCount, TournamentState } from "./types";
 
 export const STORAGE_KEY = "padel-team-challenge:v1";
 
@@ -33,7 +33,6 @@ export function parseState(raw: string | unknown): TournamentState {
     return {
       id: t.id,
       name: String(t.name ?? `Team ${t.id}`),
-      group: t.group === "B" ? "B" : "A",
       players: t.players.map((p: unknown, i: number) => {
         const pp = isObj(p) ? p : {};
         return {
@@ -72,6 +71,10 @@ export function parseState(raw: string | unknown): TournamentState {
   });
 
   const s = isObj(data.settings) ? data.settings : {};
+  // Older files have no team count; the teams they carry say how many there are.
+  const teamCount = (TEAM_COUNTS.find((n) => n === s.teamCount) ??
+    TEAM_COUNTS.find((n) => n === teams.length) ??
+    DEFAULT_SETTINGS.teamCount) as TeamCount;
   const rc = Array.isArray(data.roundClosed) ? data.roundClosed : [];
   const mm = Array.isArray(s.matchMinutes) ? s.matchMinutes : [];
   return {
@@ -81,10 +84,13 @@ export function parseState(raw: string | unknown): TournamentState {
     settings: {
       ...DEFAULT_SETTINGS,
       ...s,
-      courts:
-        Array.isArray(s.courts) && s.courts.length === 4 && s.courts.every((c) => typeof c === "number")
+      teamCount,
+      courts: fitCourts(
+        Array.isArray(s.courts) && s.courts.every((c) => typeof c === "number")
           ? (s.courts as number[])
           : [...DEFAULT_SETTINGS.courts],
+        courtCount(teamCount),
+      ),
       matchMinutes: [0, 1, 2].map((i) => num(mm[i], DEFAULT_SETTINGS.matchMinutes[i])) as [number, number, number],
       schedule: Array.isArray(s.schedule) ? (s.schedule as Settings["schedule"]) : DEFAULT_SETTINGS.schedule,
     } as TournamentState["settings"],

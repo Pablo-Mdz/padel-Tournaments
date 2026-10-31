@@ -87,7 +87,7 @@ export default function ResultsPage() {
                       {top && <Icon name="trophy" className="h-4 w-4" label={t.standings.champion} />}
                     </div>
                     <div className="text-[13px] text-ink2">
-                      {t.group(team?.group ?? "")} · {team?.players.map((p) => p.name).join(", ")}
+                      {team?.players.map((p) => p.name).join(", ")}
                     </div>
                   </td>
                   <td className="px-2 py-3 text-right">

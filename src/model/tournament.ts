@@ -1,13 +1,13 @@
 import {
   Duel,
-  GroupId,
   MATCH_TYPES,
-  RoundClock,
   Match,
   Player,
+  RoundClock,
   RoundNo,
   Settings,
   Team,
+  TeamCount,
   TournamentState,
 } from "./types";
 
@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   title: "Padel Team Challenge",
   subtitle: "4PADEL Berlin",
   date: "Saturday, 31.10.2026",
+  teamCount: 8,
   courts: [2, 3, 4, 5],
   matchMinutes: [15, 15, 20],
   schedule: [
@@ -28,17 +29,28 @@ export const DEFAULT_SETTINGS: Settings = {
   ],
 };
 
-export function createTeams(): Team[] {
-  return Array.from({ length: 8 }, (_, i) => {
-    const id = i + 1;
-    const players: Player[] = [
-      { id: `t${id}p1`, name: "Woman 1", gender: "F" },
-      { id: `t${id}p2`, name: "Woman 2", gender: "F" },
-      { id: `t${id}p3`, name: "Man 1", gender: "M" },
-      { id: `t${id}p4`, name: "Man 2", gender: "M" },
-    ];
-    return { id, name: `Team ${id}`, group: id <= 4 ? "A" : "B", players };
-  });
+/** Two teams per duel, one duel per court. */
+export const courtCount = (teamCount: number): number => Math.floor(teamCount / 2);
+
+export function createTeam(id: number): Team {
+  const players: Player[] = [
+    { id: `t${id}p1`, name: "Woman 1", gender: "F" },
+    { id: `t${id}p2`, name: "Woman 2", gender: "F" },
+    { id: `t${id}p3`, name: "Man 1", gender: "M" },
+    { id: `t${id}p4`, name: "Man 2", gender: "M" },
+  ];
+  return { id, name: `Team ${id}`, players };
+}
+
+export function createTeams(count: TeamCount): Team[] {
+  return Array.from({ length: count }, (_, i) => createTeam(i + 1));
+}
+
+/** Court numbers for `count` courts: keeps the ones already chosen, numbers the rest on. */
+export function fitCourts(courts: number[], count: number): number[] {
+  const out = courts.slice(0, count);
+  while (out.length < count) out.push((out[out.length - 1] ?? 1) + 1);
+  return out;
 }
 
 export function emptyMatches(): Match[] {
@@ -62,56 +74,72 @@ function emptyDuel(round: RoundNo, courtIndex: number): Duel {
   };
 }
 
-/** Teams of a group, sorted by team number (= slot 1–4 in the group schedule). */
-export function groupMembers(teams: Team[], group: GroupId): number[] {
-  return teams
-    .filter((t) => t.group === group)
-    .map((t) => t.id)
-    .sort((x, y) => x - y);
-}
+type Pair = [number, number];
 
 /**
- * Group schedule: round 1 = 1v2, 3v4; round 2 = 1v3, 2v4 (per group).
- * Group A plays on the first two courts, group B on the last two.
+ * Qualifying schedule for rounds 1 and 2, for any even number of teams.
+ *
+ * Round 1 pairs neighbours: 1v2, 3v4, 5v6, …
+ * Round 2 re-pairs those pairs across each other so nobody meets the same
+ * opponent twice. Pairs are taken two at a time; an odd pair left over joins
+ * the last two in a three-way rotation.
  */
-export function groupPairings(teams: Team[], round: 1 | 2): Array<[number | null, number | null]> {
-  const slots: Record<1 | 2, Array<[number, number]>> = {
-    1: [
-      [0, 1],
-      [2, 3],
-    ],
-    2: [
-      [0, 2],
-      [1, 3],
-    ],
-  };
-  const out: Array<[number | null, number | null]> = [];
-  for (const g of ["A", "B"] as GroupId[]) {
-    const m = groupMembers(teams, g);
-    for (const [x, y] of slots[round]) out.push([m[x] ?? null, m[y] ?? null]);
+export function schedulePairings(teamIds: number[], round: 1 | 2): Pair[] {
+  const pairs: Pair[] = [];
+  for (let i = 0; i + 1 < teamIds.length; i += 2) pairs.push([teamIds[i], teamIds[i + 1]]);
+  if (round === 1) return pairs;
+
+  const out: Pair[] = [];
+  for (let i = 0; i < pairs.length; ) {
+    const left = pairs.length - i;
+    if (left === 3) {
+      const [p, q, r] = [pairs[i], pairs[i + 1], pairs[i + 2]];
+      out.push([p[0], q[0]], [p[1], r[0]], [q[1], r[1]]);
+      i += 3;
+    } else if (left >= 2) {
+      const [p, q] = [pairs[i], pairs[i + 1]];
+      out.push([p[0], q[0]], [p[1], q[1]]);
+      i += 2;
+    } else {
+      // A single pair left (only with 2 teams in total): they play again.
+      out.push(pairs[i]);
+      i += 1;
+    }
   }
   return out;
 }
 
-export function createInitialState(now = Date.now()): TournamentState {
-  const teams = createTeams();
+/** Team ids in playing order. */
+export function teamIds(state: TournamentState): number[] {
+  return state.teams.map((t) => t.id).sort((x, y) => x - y);
+}
+
+/** One empty duel per round and court. */
+export function emptyDuels(teamCount: number): Duel[] {
   const duels: Duel[] = [];
   for (const round of [1, 2, 3] as RoundNo[]) {
-    for (let c = 0; c < 4; c++) duels.push(emptyDuel(round, c));
+    for (let c = 0; c < courtCount(teamCount); c++) duels.push(emptyDuel(round, c));
   }
+  return duels;
+}
+
+export function createInitialState(now = Date.now(), teamCount: TeamCount = DEFAULT_SETTINGS.teamCount): TournamentState {
+  const settings = structuredClone(DEFAULT_SETTINGS);
+  settings.teamCount = teamCount;
+  settings.courts = fitCourts(settings.courts, courtCount(teamCount));
   const state: TournamentState = {
     version: 1,
     rev: 0,
     updatedAt: now,
-    settings: structuredClone(DEFAULT_SETTINGS),
-    teams,
-    duels,
+    settings,
+    teams: createTeams(teamCount),
+    duels: emptyDuels(teamCount),
     roundClosed: [false, false, false],
     round3Edited: false,
     manualOrder: {},
     roundClock: freshRoundClock(1),
   };
-  return applyGroupSchedule(state);
+  return applySchedule(state);
 }
 
 export function duelHasStarted(d: Duel): boolean {
@@ -119,14 +147,16 @@ export function duelHasStarted(d: Duel): boolean {
 }
 
 /**
- * Rebuilds the round 1–2 pairings from the group assignment.
+ * Rebuilds the round 1–2 pairings from the list of teams.
  * Duels that already started are left untouched.
  */
-export function applyGroupSchedule(state: TournamentState): TournamentState {
+export function applySchedule(state: TournamentState): TournamentState {
+  const ids = teamIds(state);
+  const byRound = { 1: schedulePairings(ids, 1), 2: schedulePairings(ids, 2) };
   const duels = state.duels.map((d) => {
     if (d.round === 3 || duelHasStarted(d)) return d;
-    const [teamA, teamB] = groupPairings(state.teams, d.round as 1 | 2)[d.courtIndex];
-    return { ...d, teamA, teamB };
+    const pair = byRound[d.round as 1 | 2][d.courtIndex];
+    return { ...d, teamA: pair?.[0] ?? null, teamB: pair?.[1] ?? null };
   });
   return { ...state, duels };
 }

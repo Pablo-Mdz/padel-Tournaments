@@ -3,13 +3,12 @@ import { Icon, Notice, PageTitle, Segmented, stagger } from "../components/ui";
 import { downloadFile, timestamp } from "../download";
 import { t } from "../i18n/texts";
 import { parseState, serializeBackup } from "../model/persistence";
-import { groupMembers, lineupValid } from "../model/tournament";
-import { GROUPS, Gender, GroupId, Settings, Team, TournamentState } from "../model/types";
+import { lineupValid } from "../model/tournament";
+import { Gender, Settings, TEAM_COUNTS, Team, TeamCount, TournamentState } from "../model/types";
 import { dispatch, useTournament } from "../store/store";
 
 export default function SetupPage() {
   const state = useTournament();
-  const groupsOk = GROUPS.every((g) => groupMembers(state.teams, g).length === 4);
 
   return (
     <div className="flex flex-col gap-6">
@@ -24,8 +23,8 @@ export default function SetupPage() {
       />
 
       <section className="flex flex-col gap-3">
-        <SectionHeader title={t.setup.teams} note={t.setup.groupLocked} />
-        {!groupsOk && <Notice tone="bad">{t.setup.groupSizeWarning}</Notice>}
+        <SectionHeader title={t.setup.teams} note={t.setup.teamsLocked} />
+        <TeamCountPicker state={state} />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {state.teams.map((team, i) => (
             <TeamEditor key={team.id} team={team} index={i} />
@@ -36,6 +35,48 @@ export default function SetupPage() {
       <BackupSection state={state} />
       <SettingsSection settings={state.settings} />
       <ResetSection />
+    </div>
+  );
+}
+
+/** How many teams play. Rebuilding the schedule wipes the results, so it is confirmed first. */
+function TeamCountPicker({ state }: { state: TournamentState }) {
+  const [pending, setPending] = useState<TeamCount | null>(null);
+  const current = state.teams.length as TeamCount;
+  return (
+    <div className="card flex flex-col gap-3 p-4">
+      <Segmented<TeamCount>
+        label={t.setup.teamCount}
+        size="lg"
+        className="w-full sm:max-w-[420px]"
+        value={current}
+        onChange={(n) => (n === current ? undefined : setPending(n))}
+        options={TEAM_COUNTS.map((n) => ({ value: n, label: String(n) }))}
+      />
+      <p className="px-1 text-[13px] text-ink2">{t.setup.teamCountHint}</p>
+      {pending != null && (
+        <Notice
+          tone="bad"
+          actions={
+            <>
+              <button className="btn-gray" onClick={() => setPending(null)}>
+                {t.cancel}
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  dispatch({ type: "setTeamCount", teamCount: pending });
+                  setPending(null);
+                }}
+              >
+                {t.setup.teamCountApply(pending)}
+              </button>
+            </>
+          }
+        >
+          {t.setup.teamCountConfirm(pending)}
+        </Notice>
+      )}
     </div>
   );
 }
@@ -60,14 +101,6 @@ function TeamEditor({ team, index }: { team: Team; index: number }) {
         <span className="num grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-navy text-[17px] text-yellow">
           {team.id}
         </span>
-        <Segmented<GroupId>
-          label={t.setup.group}
-          size="sm"
-          className="ml-auto w-[150px]"
-          value={team.group}
-          onChange={(g) => dispatch({ type: "setTeamGroup", teamId: team.id, group: g })}
-          options={GROUPS.map((g) => ({ value: g, label: t.group(g) }))}
-        />
       </div>
       <label>
         <span className="label">{t.setup.teamName}</span>

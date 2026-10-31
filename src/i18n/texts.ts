@@ -19,7 +19,6 @@ export const t = {
 
   court: (n: number) => `Court ${n}`,
   round: (n: number) => `Round ${n}`,
-  group: (g: string) => `Group ${g}`,
   team: "Team",
   vs: "vs",
   tbd: "TBD",
@@ -56,7 +55,7 @@ export const t = {
       open > 0
         ? `Close round ${n}? ${open} duel(s) are still open and will be closed with their current score.`
         : `Close round ${n}?`,
-    confirmCloseRound2Extra: "The round 3 pairings will be generated from the group standings.",
+    confirmCloseRound2Extra: "The round 3 pairings will be generated from the qualifying table.",
     walkover: "Walkover",
     walkoverNoShow: (team: string) => `${team} did not show up`,
     walkoverNone: "No walkover",
@@ -95,10 +94,10 @@ export const t = {
 
   round3: {
     title: "Round 3 pairings",
-    auto: "Generated automatically from the group standings (1A–1B, 2A–2B, 3A–3B, 4A–4B).",
+    auto: "Generated automatically from the qualifying table: 1st plays 2nd, 3rd plays 4th, and so on.",
     edited: "Edited by hand.",
     regenerate: "Recalculate from standings",
-    unresolved: "There is an unresolved tie in the group standings. Resolve it in Standings or set the pairings by hand.",
+    unresolved: "There is an unresolved tie in the qualifying table. Resolve it in Standings or set the pairings by hand.",
     notYet: "The pairings are generated when round 2 is closed.",
     lockedStarted: "Already started – pairing can no longer be changed.",
   },
@@ -106,8 +105,8 @@ export const t = {
   standings: {
     overallTitle: "Overall standings",
     overallHint: "Total points over all 3 rounds – this table decides the champion.",
-    groupTitle: (g: string) => `Group ${g}`,
-    groupHint: "Rounds 1–2 · used for the round 3 pairings",
+    qualifyingTitle: "Qualifying table",
+    qualifyingHint: "Rounds 1–2 · sets the round 3 pairings",
     pos: "#",
     team: "Team",
     played: "P",
@@ -136,9 +135,12 @@ export const t = {
     womanLong: "Woman",
     manLong: "Man",
     lineupWarning: "A team should have 2 women and 2 men. You can save anyway.",
-    group: "Group",
-    groupSizeWarning: "Each group should have exactly 4 teams.",
-    groupLocked: "Only duels that have not started yet are re-scheduled.",
+    teamCount: "Number of teams",
+    teamCountHint: "Changing this clears all results and rebuilds the schedule.",
+    teamCountApply: (n: number) => `Play with ${n} teams`,
+    teamCountConfirm: (n: number) =>
+      `Play with ${n} teams? All results entered so far are deleted and the schedule is built again.`,
+    teamsLocked: "Only duels that have not started yet are re-scheduled.",
     settings: "Settings",
     eventTitle: "Title",
     eventSubtitle: "Subtitle",
@@ -182,7 +184,7 @@ export const t = {
   display: {
     live: "Live",
     liveScores: "Live scores",
-    groups: "Group standings",
+    qualifying: "Qualifying table",
     currentMatch: "Now",
     finished: "Finished",
     notStarted: "Not started",
@@ -194,7 +196,6 @@ export const t = {
   csv: {
     rank: "Rank",
     team: "Team",
-    group: "Group",
     played: "Played",
     won: "Won",
     drawn: "Drawn",

@@ -1,9 +1,19 @@
 import { round3Pairings } from "./standings";
-import { applyGroupSchedule, createInitialState, duelHasStarted, duelsOfRound, freshRoundClock } from "./tournament";
+import {
+  applySchedule,
+  courtCount,
+  createInitialState,
+  createTeam,
+  duelHasStarted,
+  duelsOfRound,
+  emptyDuels,
+  fitCourts,
+  freshRoundClock,
+} from "./tournament";
 import {
   Duel,
   Gender,
-  GroupId,
+  TeamCount,
   Match,
   RankingContext,
   RoundClock,
@@ -16,7 +26,7 @@ import {
 export type Action =
   | { type: "setTeamName"; teamId: number; name: string }
   | { type: "setPlayer"; teamId: number; playerId: string; name?: string; gender?: Gender }
-  | { type: "setTeamGroup"; teamId: number; group: GroupId }
+  | { type: "setTeamCount"; teamCount: TeamCount }
   | { type: "updateSettings"; settings: Partial<Settings> }
   | { type: "addPoints"; duelId: string; matchIndex: number; side: Side; delta: number }
   | { type: "setScore"; duelId: string; matchIndex: number; a: number; b: number }
@@ -94,9 +104,20 @@ function apply(state: TournamentState, action: Action, now: number): TournamentS
         ),
       };
 
-    case "setTeamGroup": {
-      const teams = state.teams.map((t) => (t.id === action.teamId ? { ...t, group: action.group } : t));
-      return applyGroupSchedule({ ...state, teams });
+    case "setTeamCount": {
+      const count = action.teamCount;
+      if (count === state.teams.length) return state;
+      // Team names and players already typed in are kept; extra teams are dropped.
+      const teams = Array.from({ length: count }, (_, i) => state.teams[i] ?? createTeam(i + 1));
+      return applySchedule({
+        ...state,
+        teams,
+        duels: emptyDuels(count),
+        settings: { ...state.settings, teamCount: count, courts: fitCourts(state.settings.courts, courtCount(count)) },
+        roundClosed: [false, false, false],
+        round3Edited: false,
+        manualOrder: {},
+      });
     }
 
     case "updateSettings":

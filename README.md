@@ -30,10 +30,10 @@ Netlify via `public/_redirects`); `#/display` works on any host.
 | Route        | Purpose |
 |--------------|---------|
 | `/`          | Scoring: 4 courts of the active round, tap a court to score the duel |
-| `/standings` | Overall table (decides the champion) + group tables, manual tie resolution |
+| `/standings` | Overall table (decides the champion) + qualifying table, manual tie resolution |
 | `/results`   | Final ranking 1–8 with points per round and per match type, CSV/JSON export |
-| `/setup`     | Teams, players, groups, courts, match lengths, schedule, backup, reset |
-| `/display`   | TV screen, rotates every 15 s: live scores → overall → groups |
+| `/setup`     | Number of teams, players, courts, match lengths, schedule, backup, reset |
+| `/display`   | TV screen, rotates every 15 s: live scores → overall → qualifying |
 
 Courts are always shown with their real numbers (default 2, 3, 4, 5 – editable in Setup).
 
@@ -41,10 +41,13 @@ Courts are always shown with their real numbers (default 2, 3, 4, 5 – editable
 
 - Duel = Women, Men, Mixed 1, Mixed 2 on the same court. +1 opponent error, +2 winner.
   The duel goes to the team with more total points; draws are allowed.
-- Group ranking after round 2 (for round 3 pairings): points for → point difference →
+- 4, 6, 8 or 10 teams, set in Setup. One duel per two teams, so courts = teams / 2.
+- Rounds 1 and 2 are fixed pairings, built so nobody meets the same opponent twice.
+- Qualifying ranking after round 2 (for round 3 pairings): points for → point difference →
   head-to-head (only if all tied teams played each other) → manual order (shown in red until set).
-- Round 3 pairings (1A–1B … 4A–4B) are generated when round 2 is closed and follow later
-  corrections until they are edited by hand or a round 3 duel starts.
+- Round 3 pairings come from the qualifying table — 1st plays 2nd, 3rd plays 4th, and so
+  on — generated when round 2 is closed. They follow later corrections until they are
+  edited by hand or a round 3 duel starts.
 - Champion and final ranking: total points over all 3 rounds, same tie-breakers.
 
 ## Data & sync

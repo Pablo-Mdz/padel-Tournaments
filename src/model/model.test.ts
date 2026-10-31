@@ -2,9 +2,17 @@ import { describe, expect, it } from "vitest";
 import { matchesCsv, standingsCsv } from "./export";
 import { BackupError, parseState, serializeBackup } from "./persistence";
 import { Action, reducer } from "./reducer";
-import { groupStandings, overallStandings, round3Pairings, teamBreakdown } from "./standings";
-import { createInitialState, duelTotals, duelsOfRound, lineup, lineupValid, roundClockMinutes } from "./tournament";
-import { RoundNo, TournamentState } from "./types";
+import { overallStandings, qualifyingStandings, round3Pairings, teamBreakdown } from "./standings";
+import {
+  createInitialState,
+  duelTotals,
+  duelsOfRound,
+  lineup,
+  lineupValid,
+  roundClockMinutes,
+  schedulePairings,
+} from "./tournament";
+import { TEAM_COUNTS, RoundNo, TournamentState } from "./types";
 
 const NOW = 1_000_000;
 
@@ -56,13 +64,39 @@ describe("schedule", () => {
     expect(s.settings.courts).toEqual([2, 3, 4, 5]);
   });
 
-  it("re-schedules unstarted duels when groups change, but keeps started ones", () => {
-    let s = createInitialState(NOW);
-    s = run(s, { type: "addPoints", duelId: duelId(s, 1, 0), matchIndex: 0, side: "a", delta: 1 });
-    s = run(s, { type: "setTeamGroup", teamId: 4, group: "B" }, { type: "setTeamGroup", teamId: 5, group: "A" });
-    expect([duelsOfRound(s, 1)[0].teamA, duelsOfRound(s, 1)[0].teamB]).toEqual([1, 2]); // started, untouched
-    expect([duelsOfRound(s, 1)[1].teamA, duelsOfRound(s, 1)[1].teamB]).toEqual([3, 5]);
-    expect([duelsOfRound(s, 1)[2].teamA, duelsOfRound(s, 1)[2].teamB]).toEqual([4, 6]);
+  it.each(TEAM_COUNTS)("schedules %i teams over two rounds without repeating an opponent", (count) => {
+    const ids = Array.from({ length: count }, (_, i) => i + 1);
+    const key = ([a, b]: [number, number]) => [a, b].sort((x, y) => x - y).join("-");
+    const r1 = schedulePairings(ids, 1);
+    const r2 = schedulePairings(ids, 2);
+    for (const round of [r1, r2]) {
+      expect(round).toHaveLength(count / 2);
+      // every team plays exactly once per round
+      expect(round.flat().sort((a, b) => a - b)).toEqual(ids);
+    }
+    // and never the same opponent twice
+    expect(new Set([...r1, ...r2].map(key)).size).toBe(count);
+  });
+
+  it("rebuilds teams, courts and schedule when the team count changes", () => {
+    let s = run(createInitialState(NOW), { type: "setTeamName", teamId: 2, name: "Smash Criminals" });
+    s = run(s, { type: "setTeamCount", teamCount: 4 });
+    expect(s.teams.map((t) => t.id)).toEqual([1, 2, 3, 4]);
+    expect(s.teams[1].name).toBe("Smash Criminals"); // names already typed in are kept
+    expect(s.settings.courts).toEqual([2, 3]);
+    expect(duelsOfRound(s, 1).map((d) => [d.teamA, d.teamB])).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
+    expect(duelsOfRound(s, 2).map((d) => [d.teamA, d.teamB])).toEqual([
+      [1, 3],
+      [2, 4],
+    ]);
+
+    s = run(s, { type: "setTeamCount", teamCount: 10 });
+    expect(s.teams).toHaveLength(10);
+    expect(s.settings.courts).toEqual([2, 3, 4, 5, 6]);
+    expect(duelsOfRound(s, 3)).toHaveLength(5);
   });
 });
 
@@ -130,7 +164,7 @@ describe("standings", () => {
   it("allows a drawn duel", () => {
     let s = createInitialState(NOW);
     s = simple(s, 1, 0, 20, 20);
-    const g = groupStandings(s, "A");
+    const g = qualifyingStandings(s);
     expect(g.find((r) => r.teamId === 1)).toMatchObject({ drawn: 1, won: 0, lost: 0 });
     expect(g.find((r) => r.teamId === 2)).toMatchObject({ drawn: 1, won: 0, lost: 0 });
   });
@@ -139,15 +173,15 @@ describe("standings", () => {
     let s = createInitialState(NOW);
     s = simple(s, 1, 0, 30, 29); // team 1 wins with 30
     s = simple(s, 1, 1, 40, 45); // team 4 wins with 45, team 3 loses with 40
-    const g = groupStandings(s, "A").map((r) => r.teamId);
-    expect(g).toEqual([4, 3, 1, 2]);
+    const g = qualifyingStandings(s).map((r) => r.teamId);
+    expect(g.slice(0, 4)).toEqual([4, 3, 1, 2]);
   });
 
   it("breaks equal points by point difference", () => {
     let s = createInitialState(NOW);
     s = simple(s, 1, 0, 30, 10); // team 1: 30 / +20
     s = simple(s, 1, 1, 30, 25); // team 3: 30 / +5
-    expect(groupStandings(s, "A").map((r) => r.teamId)).toEqual([1, 3, 4, 2]);
+    expect(qualifyingStandings(s).map((r) => r.teamId).slice(0, 4)).toEqual([1, 3, 4, 2]);
   });
 
   it("breaks equal points and difference by head-to-head", () => {
@@ -158,7 +192,7 @@ describe("standings", () => {
     // Round 2: 1–3 = 10:20 and 2–4 = 20:10 → totals: 1: 30/0, 2: 30/0, 3: 30/0, 4: 30/0
     s = simple(s, 2, 0, 10, 20);
     s = simple(s, 2, 1, 20, 10);
-    const rows = groupStandings(s, "A");
+    const rows = qualifyingStandings(s).slice(0, 4);
     // All four level on 30/0; not every pair has met (1–4, 2–3 never played),
     // so the whole block stays unresolved.
     expect(rows.every((r) => r.pf === 30 && r.diff === 0)).toBe(true);
@@ -171,7 +205,7 @@ describe("standings", () => {
     t = simple(t, 1, 0, 12, 10); // 1: 12/10, 2: 10/12
     t = simple(t, 2, 0, 8, 10); // 1: 20/20
     t = simple(t, 2, 1, 10, 8); // 2: 20/20
-    const r2 = groupStandings(t, "A");
+    const r2 = qualifyingStandings(t);
     const one = r2.findIndex((r) => r.teamId === 1);
     const two = r2.findIndex((r) => r.teamId === 2);
     expect(r2[one].pf).toBe(r2[two].pf);
@@ -184,13 +218,13 @@ describe("standings", () => {
     let s = createInitialState(NOW);
     // 1 and 2 draw their duel with 10:10 → equal everything, head-to-head equal too.
     s = simple(s, 1, 0, 10, 10);
-    let rows = groupStandings(s, "A");
+    let rows = qualifyingStandings(s);
     const tied = rows.filter((r) => r.unresolvedTie).map((r) => r.teamId);
     expect(tied).toEqual([1, 2]);
     expect(round3Pairings(s).unresolved).toBe(true);
 
-    s = run(s, { type: "setManualOrder", context: "groupA", order: [2, 1] });
-    rows = groupStandings(s, "A");
+    s = run(s, { type: "setManualOrder", context: "qualifying", order: [2, 1] });
+    rows = qualifyingStandings(s);
     expect(rows.slice(0, 2).map((r) => r.teamId)).toEqual([2, 1]);
     expect(rows[0].manualTie).toBe(true);
     expect(rows.some((r) => r.unresolvedTie && (r.teamId === 1 || r.teamId === 2))).toBe(false);
@@ -202,12 +236,12 @@ describe("standings", () => {
     expect(overallStandings(s)[0].teamId).toBe(1);
     s = run(s, { type: "setScore", duelId: duelId(s, 1, 0), matchIndex: 0, a: 10, b: 30 });
     expect(overallStandings(s)[0].teamId).toBe(2);
-    expect(groupStandings(s, "A").find((r) => r.teamId === 2)).toMatchObject({ won: 1, pf: 30 });
+    expect(qualifyingStandings(s).find((r) => r.teamId === 2)).toMatchObject({ won: 1, pf: 30 });
   });
 });
 
-/** Plays rounds 1–2 with clear results so that group A ranks 1,2,3,4 and group B 8,7,6,5. */
-function groupPhase(): TournamentState {
+/** Plays rounds 1–2 so the qualifying table ends up 1, 8, 7, 2, 3, 6, 4, 5. */
+function qualifying(): TournamentState {
   let s = createInitialState(NOW);
   // Round 1: 1–2, 3–4, 5–6, 7–8
   s = simple(s, 1, 0, 50, 30);
@@ -223,27 +257,26 @@ function groupPhase(): TournamentState {
 }
 
 describe("round 3", () => {
-  it("generates the cross pairings when round 2 is closed", () => {
-    let s = groupPhase();
-    expect(groupStandings(s, "A").map((r) => r.teamId)).toEqual([1, 2, 3, 4]);
-    expect(groupStandings(s, "B").map((r) => r.teamId)).toEqual([8, 7, 6, 5]);
+  it("pairs 1st-2nd, 3rd-4th … once round 2 is closed", () => {
+    let s = qualifying();
+    expect(qualifyingStandings(s).map((r) => r.teamId)).toEqual([1, 8, 7, 2, 3, 6, 4, 5]);
     expect(duelsOfRound(s, 3).every((d) => d.teamA === null)).toBe(true);
 
     s = run(s, { type: "closeRound", round: 1 }, { type: "closeRound", round: 2 });
     expect(duelsOfRound(s, 3).map((d) => [d.teamA, d.teamB])).toEqual([
       [1, 8],
-      [2, 7],
+      [7, 2],
       [3, 6],
       [4, 5],
     ]);
   });
 
   it("follows corrections in rounds 1–2 until round 3 starts or is edited", () => {
-    let s = run(groupPhase(), { type: "closeRound", round: 1 }, { type: "closeRound", round: 2 });
-    // Correction: team 4 actually scored 80 in round 2 → team 4 leads group A
+    let s = run(qualifying(), { type: "closeRound", round: 1 }, { type: "closeRound", round: 2 });
+    // Correction: team 4 actually scored 80 in round 2 → team 4 tops the table
     s = run(s, { type: "setScore", duelId: duelId(s, 2, 1), matchIndex: 0, a: 20, b: 80 });
-    expect(groupStandings(s, "A")[0].teamId).toBe(4);
-    expect([duelsOfRound(s, 3)[0].teamA, duelsOfRound(s, 3)[0].teamB]).toEqual([4, 8]);
+    expect(qualifyingStandings(s)[0].teamId).toBe(4);
+    expect([duelsOfRound(s, 3)[0].teamA, duelsOfRound(s, 3)[0].teamB]).toEqual([4, 1]);
 
     // Manual edit locks the pairings
     s = run(s, { type: "setRound3Team", courtIndex: 0, side: "b", teamId: 5 });
@@ -256,7 +289,7 @@ describe("round 3", () => {
   });
 
   it("decides the champion by total points, not by the round 3 duel", () => {
-    let s = run(groupPhase(), { type: "closeRound", round: 1 }, { type: "closeRound", round: 2 });
+    let s = run(qualifying(), { type: "closeRound", round: 1 }, { type: "closeRound", round: 2 });
     // Team 1 has 90, team 8 has 85. Team 8 wins the final duel 12:10 but stays behind on total.
     s = simple(s, 3, 0, 10, 12);
     const top = overallStandings(s);
@@ -279,7 +312,7 @@ describe("special cases", () => {
     );
     const d = s.duels.find((x) => x.id === id)!;
     expect(d.walkover).toBe("b");
-    expect(groupStandings(s, "A").find((r) => r.teamId === 3)).toMatchObject({ won: 1, pf: 20 });
+    expect(qualifyingStandings(s).find((r) => r.teamId === 3)).toMatchObject({ won: 1, pf: 20 });
   });
 
   it("renaming teams and players keeps every point", () => {
@@ -319,7 +352,7 @@ describe("special cases", () => {
 
 describe("persistence & export", () => {
   it("round-trips a backup", () => {
-    const s = run(groupPhase(), { type: "setTeamName", teamId: 3, name: 'Team "Drop", Shot' });
+    const s = run(qualifying(), { type: "setTeamName", teamId: 3, name: 'Team "Drop", Shot' });
     const back = parseState(serializeBackup(s));
     expect(back).toEqual(s);
   });
@@ -350,7 +383,7 @@ describe("persistence & export", () => {
       name: 'A, "B"',
     });
     const st = standingsCsv(s).split("\r\n");
-    expect(st[1]).toMatch(/^1,"A, ""B""",A,1,1,0,0,30,10,20,30,0,0,30,0,0,0$/);
+    expect(st[1]).toMatch(/^1,"A, ""B""",1,1,0,0,30,10,20,30,0,0,30,0,0,0$/);
     const mt = matchesCsv(s).split("\r\n");
     expect(mt[1].split(",")[1]).toBe("2");
     const courts = new Set(mt.slice(1, -1).map((l) => Number(l.split(",")[1])));

@@ -247,7 +247,7 @@ function Round3Editor({ state }: { state: TournamentState }) {
               <option value="">{t.tbd}</option>
               {state.teams.map((tm) => (
                 <option key={tm.id} value={tm.id}>
-                  {tm.name} ({t.group(tm.group)})
+                  {tm.name}
                 </option>
               ))}
             </select>

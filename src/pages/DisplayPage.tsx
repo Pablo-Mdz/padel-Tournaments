@@ -5,15 +5,15 @@ import { RoundClockTV } from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
 import { Icon, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
-import { groupStandings, overallStandings } from "../model/standings";
+import { overallStandings, qualifyingStandings } from "../model/standings";
 import { activeRound, duelsOfRound } from "../model/tournament";
-import { GROUPS, TournamentState } from "../model/types";
+import { TournamentState } from "../model/types";
 import { goBack } from "../router";
 import { useNow, useSessionState } from "../store/hooks";
 import { useTournament } from "../store/store";
 
 const SLIDE_MS = 15_000;
-const SLIDES = ["live", "overall", "groups"] as const;
+const SLIDES = ["live", "overall", "qualifying"] as const;
 
 function currentScheduleItem(state: TournamentState, now: number) {
   const d = new Date(now);
@@ -55,6 +55,10 @@ export default function DisplayPage() {
   }, [slide, setSlide]);
 
   const round = activeRound(state);
+  const courts = duelsOfRound(state, round).length;
+  // 2 courts sit side by side; 3 or more wrap into two rows.
+  const cols = courts <= 2 ? courts : Math.ceil(courts / 2);
+  const rows = courts <= 2 ? 1 : 2;
   const item = currentScheduleItem(state, now);
   const clock = new Date(now).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const kind = SLIDES[slide % SLIDES.length] ?? "live";
@@ -63,7 +67,7 @@ export default function DisplayPage() {
       ? `${t.display.liveScores} · ${t.round(round)}`
       : kind === "overall"
         ? t.standings.overallTitle
-        : t.display.groups;
+        : t.display.qualifying;
 
   return (
     <div
@@ -132,7 +136,13 @@ export default function DisplayPage() {
       <div className="flex min-h-0 flex-1 gap-[1.6vw]">
       <main key={kind} className="anim-rise min-h-0 min-w-0 flex-1">
         {kind === "live" && (
-          <div className="grid h-full grid-cols-2 grid-rows-2 gap-[1.6vw]">
+          <div
+            className="grid h-full gap-[1.6vw]"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+            }}
+          >
             {duelsOfRound(state, round).map((d, i) => (
               <CourtCard key={d.id} state={state} duel={d} big style={stagger(i, 90)} />
             ))}
@@ -144,24 +154,15 @@ export default function DisplayPage() {
             <StandingsTable state={state} rows={overallStandings(state)} context="overall" big highlightLeader />
           </div>
         )}
-        {kind === "groups" && (
-          <div className="grid h-full grid-cols-2 gap-[1.6vw]">
-            {GROUPS.map((g, i) => (
-              <div
-                key={g}
-                style={stagger(i, 120)}
-                className="anim-rise overflow-hidden rounded-[2.4vh] bg-white/[0.07] px-[1.6vw] py-[1.5vh] ring-1 ring-white/10 backdrop-blur"
-              >
-                <div className="mb-[0.5vh] text-[3.6vh] font-bold">{t.standings.groupTitle(g)}</div>
-                <StandingsTable
-                  state={state}
-                  rows={groupStandings(state, g)}
-                  context={g === "A" ? "groupA" : "groupB"}
-                  big
-                  columns="points"
-                />
-              </div>
-            ))}
+        {kind === "qualifying" && (
+          <div className="relative h-full overflow-hidden rounded-[2.4vh] bg-white/[0.07] px-[2vw] py-[1.5vh] ring-1 ring-white/10 backdrop-blur">
+            <StandingsTable
+              state={state}
+              rows={qualifyingStandings(state)}
+              context="qualifying"
+              big
+              columns="points"
+            />
           </div>
         )}
       </main>

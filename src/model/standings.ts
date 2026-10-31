@@ -1,5 +1,5 @@
-import { duelHasStarted, duelTotals, groupMembers } from "./tournament";
-import { Duel, GroupId, MATCH_TYPES, MatchType, RankingContext, RoundNo, TournamentState } from "./types";
+import { courtCount, duelHasStarted, duelTotals, teamIds } from "./tournament";
+import { Duel, MATCH_TYPES, MatchType, RankingContext, RoundNo, TournamentState } from "./types";
 
 export interface StandingRow {
   teamId: number;
@@ -178,36 +178,31 @@ export function rankTeams(
   return rows;
 }
 
-/** Group table – rounds 1 and 2 only (used to build the round 3 pairings). */
-export function groupStandings(state: TournamentState, group: GroupId): StandingRow[] {
-  return rankTeams(state, groupMembers(state.teams, group), [1, 2], group === "A" ? "groupA" : "groupB");
+/** Qualifying table – rounds 1 and 2 only; it builds the round 3 pairings. */
+export function qualifyingStandings(state: TournamentState): StandingRow[] {
+  return rankTeams(state, teamIds(state), [1, 2], "qualifying");
 }
 
 /** Overall ranking over all three rounds – decides the champion. */
 export function overallStandings(state: TournamentState): StandingRow[] {
-  return rankTeams(
-    state,
-    state.teams.map((t) => t.id),
-    [1, 2, 3],
-    "overall",
-  );
+  return rankTeams(state, teamIds(state), [1, 2, 3], "overall");
 }
 
 /**
- * Round 3 cross pairings: 1A–1B, 2A–2B, 3A–3B, 4A–4B on the courts in that order.
+ * Round 3 pairings: the qualifying table decides them, best against second best.
+ * 1st–2nd on the first court, 3rd–4th on the next, and so on, so the title is
+ * played out on court one.
  */
 export function round3Pairings(state: TournamentState): {
   pairs: Array<[number | null, number | null]>;
   unresolved: boolean;
 } {
-  const a = groupStandings(state, "A");
-  const b = groupStandings(state, "B");
-  const pairs: Array<[number | null, number | null]> = [0, 1, 2, 3].map((i) => [
-    a[i]?.teamId ?? null,
-    b[i]?.teamId ?? null,
-  ]);
-  const unresolved = [...a, ...b].some((r) => r.unresolvedTie);
-  return { pairs, unresolved };
+  const table = qualifyingStandings(state);
+  const pairs: Array<[number | null, number | null]> = Array.from(
+    { length: courtCount(state.teams.length) },
+    (_, i) => [table[i * 2]?.teamId ?? null, table[i * 2 + 1]?.teamId ?? null],
+  );
+  return { pairs, unresolved: table.some((r) => r.unresolvedTie) };
 }
 
 export interface TeamBreakdown {

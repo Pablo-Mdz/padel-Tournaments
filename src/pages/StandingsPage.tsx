@@ -2,8 +2,7 @@ import RoundClock from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
 import { Icon, PageTitle, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
-import { groupStandings, overallStandings } from "../model/standings";
-import { GROUPS } from "../model/types";
+import { overallStandings, qualifyingStandings } from "../model/standings";
 import { useReadOnly, useTournament } from "../store/store";
 
 export default function StandingsPage() {
@@ -31,22 +30,13 @@ export default function StandingsPage() {
         <StandingsTable state={state} rows={overallStandings(state)} context="overall" editable={!readOnly} highlightLeader />
       </section>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {GROUPS.map((g, i) => (
-          <section key={g} className="card anim-rise p-4 sm:p-5" style={stagger(i + 2, 80)}>
-            <div className="mb-1 flex items-baseline justify-between gap-2">
-              <h2 className="text-[22px] font-bold tracking-tight">{t.standings.groupTitle(g)}</h2>
-              <span className="text-[13px] text-ink2">{t.standings.groupHint}</span>
-            </div>
-            <StandingsTable
-              state={state}
-              rows={groupStandings(state, g)}
-              context={g === "A" ? "groupA" : "groupB"}
-              editable={!readOnly}
-            />
-          </section>
-        ))}
-      </div>
+      <section className="card anim-rise p-4 sm:p-5" style={stagger(2, 80)}>
+        <div className="mb-1 flex items-baseline justify-between gap-2">
+          <h2 className="text-[22px] font-bold tracking-tight">{t.standings.qualifyingTitle}</h2>
+          <span className="text-[13px] text-ink2">{t.standings.qualifyingHint}</span>
+        </div>
+        <StandingsTable state={state} rows={qualifyingStandings(state)} context="qualifying" editable={!readOnly} />
+      </section>
       <p className="px-1 text-[13px] text-ink2">{t.standings.legend}</p>
     </div>
   );

@@ -1,7 +1,6 @@
 // Tournament data model. Everything that is persisted lives in `TournamentState`.
 
 export type Gender = "F" | "M";
-export type GroupId = "A" | "B";
 export type RoundNo = 1 | 2 | 3;
 export type Side = "a" | "b";
 
@@ -10,7 +9,10 @@ export const MATCH_TYPES = ["women", "men", "mixed1", "mixed2"] as const;
 export type MatchType = (typeof MATCH_TYPES)[number];
 
 export const ROUNDS: readonly RoundNo[] = [1, 2, 3];
-export const GROUPS: readonly GroupId[] = ["A", "B"];
+
+/** Team counts the schedule supports. Each duel needs a court, so courts = teams / 2. */
+export const TEAM_COUNTS = [4, 6, 8, 10] as const;
+export type TeamCount = (typeof TEAM_COUNTS)[number];
 
 export interface Player {
   id: string;
@@ -19,10 +21,9 @@ export interface Player {
 }
 
 export interface Team {
-  /** Fixed team number 1–8. Names may change, the id never does. */
+  /** Fixed team number, counting from 1. Names may change, the id never does. */
   id: number;
   name: string;
-  group: GroupId;
   players: Player[];
 }
 
@@ -35,7 +36,7 @@ export interface Match {
 export interface Duel {
   id: string;
   round: RoundNo;
-  /** Index 0–3 into `settings.courts` – never the displayed number. */
+  /** Index into `settings.courts` – never the displayed number. */
   courtIndex: number;
   teamA: number | null;
   teamB: number | null;
@@ -55,7 +56,9 @@ export interface Settings {
   title: string;
   subtitle: string;
   date: string;
-  /** Real court numbers of the club. */
+  /** How many teams play. One duel per two teams, so this also sets the number of courts. */
+  teamCount: TeamCount;
+  /** Real court numbers of the club, one per court in play. */
   courts: number[];
   /** Match length in minutes per round (index 0 = round 1). */
   matchMinutes: [number, number, number];
@@ -63,7 +66,7 @@ export interface Settings {
 }
 
 /** Contexts in which the organiser breaks ties by hand. */
-export type RankingContext = "groupA" | "groupB" | "overall";
+export type RankingContext = "qualifying" | "overall";
 
 export interface TournamentState {
   version: 1;

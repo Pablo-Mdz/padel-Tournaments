@@ -17,7 +17,6 @@ export function standingsCsv(state: TournamentState): string {
   const header = [
     t.csv.rank,
     t.csv.team,
-    t.csv.group,
     t.csv.played,
     t.csv.won,
     t.csv.drawn,
@@ -36,7 +35,6 @@ export function standingsCsv(state: TournamentState): string {
     return [
       r.rank,
       team?.name ?? r.teamId,
-      team?.group ?? "",
       r.played,
       r.won,
       r.drawn,
@@ -96,7 +94,6 @@ export function resultsJson(state: TournamentState): string {
       rank: r.rank,
       teamId: r.teamId,
       team: team?.name,
-      group: team?.group,
       players: team?.players.map((p) => ({ name: p.name, gender: p.gender })),
       played: r.played,
       won: r.won,
