@@ -86,4 +86,15 @@ export interface TournamentState {
   round3Edited: boolean;
   /** Manual order (team ids), used as the last tie-breaker. */
   manualOrder: Partial<Record<RankingContext, number[]>>;
+  /** Countdown for the round on all courts – run by the organiser, shown to everyone. */
+  roundClock: RoundClock;
+}
+
+export interface RoundClock {
+  startedAt: number | null;
+  elapsedMs: number;
+  /** Chosen length; null = the round's default from the settings. */
+  minutes: number | null;
+  /** Round the clock is running (or last ran) for. */
+  round: RoundNo;
 }

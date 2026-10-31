@@ -88,6 +88,9 @@ export const t = {
     roundClock: "Round clock",
     length: "Match length",
     minutes: (n: number) => `${n} min`,
+    timeLeft: "Time left",
+    paused: "Paused",
+    sharedHint: "Players and the TV see this clock; only you can control it.",
   },
 
   round3: {

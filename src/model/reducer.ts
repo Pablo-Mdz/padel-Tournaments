@@ -1,11 +1,12 @@
 import { round3Pairings } from "./standings";
-import { applyGroupSchedule, createInitialState, duelHasStarted, duelsOfRound } from "./tournament";
+import { applyGroupSchedule, createInitialState, duelHasStarted, duelsOfRound, freshRoundClock } from "./tournament";
 import {
   Duel,
   Gender,
   GroupId,
   Match,
   RankingContext,
+  RoundClock,
   RoundNo,
   Settings,
   Side,
@@ -32,6 +33,11 @@ export type Action =
   | { type: "setRound3Team"; courtIndex: number; side: Side; teamId: number | null }
   | { type: "regenerateRound3" }
   | { type: "setManualOrder"; context: RankingContext; order: number[] }
+  | { type: "clockStart"; round: RoundNo; minutes: number }
+  | { type: "clockPause" }
+  | { type: "clockReset" }
+  | { type: "clockSetMinutes"; minutes: number }
+  | { type: "clockRestore"; clock: RoundClock }
   | { type: "import"; state: TournamentState }
   | { type: "reset" };
 
@@ -201,6 +207,35 @@ function apply(state: TournamentState, action: Action, now: number): TournamentS
     case "import":
       return action.state;
 
+    case "clockStart": {
+      const c = state.roundClock;
+      if (c.startedAt != null) return state;
+      // A fresh clock is tied to the round it is started for, with the length shown.
+      const fresh = c.elapsedMs === 0;
+      return {
+        ...state,
+        roundClock: fresh
+          ? { startedAt: now, elapsedMs: 0, minutes: action.minutes, round: action.round }
+          : { ...c, startedAt: now },
+      };
+    }
+    case "clockPause": {
+      const c = state.roundClock;
+      if (c.startedAt == null) return state;
+      return { ...state, roundClock: { ...c, startedAt: null, elapsedMs: c.elapsedMs + Math.max(0, now - c.startedAt) } };
+    }
+    case "clockReset": {
+      const c = state.roundClock;
+      if (c.startedAt == null && c.elapsedMs === 0 && c.minutes == null) return state;
+      return { ...state, roundClock: freshRoundClock(c.round) };
+    }
+    case "clockSetMinutes": {
+      const m = Math.round(action.minutes);
+      if (!(m > 0) || state.roundClock.minutes === m) return state;
+      return { ...state, roundClock: { ...state.roundClock, minutes: m } };
+    }
+    case "clockRestore":
+      return { ...state, roundClock: action.clock };
     case "reset":
       return createInitialState(now);
   }

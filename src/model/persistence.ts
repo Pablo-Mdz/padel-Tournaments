@@ -98,9 +98,21 @@ export function parseState(raw: string | unknown): TournamentState {
     roundClosed: [rc[0] === true, rc[1] === true, rc[2] === true],
     round3Edited: data.round3Edited === true,
     manualOrder: isObj(data.manualOrder) ? (data.manualOrder as TournamentState["manualOrder"]) : {},
+    roundClock: parseRoundClock(data.roundClock),
   };
 }
 
 export function serializeBackup(state: TournamentState, now = new Date()): string {
   return JSON.stringify({ app: "padel-team-challenge", exportedAt: now.toISOString(), state }, null, 2);
+}
+
+function parseRoundClock(raw: unknown): TournamentState["roundClock"] {
+  const c = isObj(raw) ? raw : {};
+  const round = c.round === 2 || c.round === 3 ? c.round : 1;
+  return {
+    startedAt: typeof c.startedAt === "number" && Number.isFinite(c.startedAt) ? c.startedAt : null,
+    elapsedMs: typeof c.elapsedMs === "number" && c.elapsedMs > 0 ? c.elapsedMs : 0,
+    minutes: typeof c.minutes === "number" && c.minutes > 0 ? c.minutes : null,
+    round,
+  };
 }

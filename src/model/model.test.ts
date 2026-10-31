@@ -3,7 +3,7 @@ import { matchesCsv, standingsCsv } from "./export";
 import { BackupError, parseState, serializeBackup } from "./persistence";
 import { Action, reducer } from "./reducer";
 import { groupStandings, overallStandings, round3Pairings, teamBreakdown } from "./standings";
-import { createInitialState, duelTotals, duelsOfRound, lineup, lineupValid } from "./tournament";
+import { createInitialState, duelTotals, duelsOfRound, lineup, lineupValid, roundClockMinutes } from "./tournament";
 import { RoundNo, TournamentState } from "./types";
 
 const NOW = 1_000_000;
@@ -362,5 +362,31 @@ describe("persistence & export", () => {
     expect(mt[1].split(",")[1]).toBe("2");
     const courts = new Set(mt.slice(1, -1).map((l) => Number(l.split(",")[1])));
     expect([...courts].sort()).toEqual([2, 3, 4, 5]);
+  });
+});
+
+describe("round clock", () => {
+  it("is shared state: start, pause, length and reset", () => {
+    let s = createInitialState(NOW);
+    expect(roundClockMinutes(s, 3)).toBe(20);
+    expect(roundClockMinutes(s, 1)).toBe(15);
+    s = reducer(s, { type: "clockStart", round: 3, minutes: 20 }, NOW);
+    expect(s.roundClock).toEqual({ startedAt: NOW, elapsedMs: 0, minutes: 20, round: 3 });
+    // Once running, the clock keeps its own round whatever round is on screen.
+    expect(roundClockMinutes(s, 1)).toBe(20);
+    s = reducer(s, { type: "clockPause" }, NOW + 60_000);
+    expect(s.roundClock.elapsedMs).toBe(60_000);
+    s = reducer(s, { type: "clockSetMinutes", minutes: 15 }, NOW);
+    expect(roundClockMinutes(s)).toBe(15);
+    s = reducer(s, { type: "clockReset" }, NOW);
+    expect(s.roundClock).toEqual({ startedAt: null, elapsedMs: 0, minutes: null, round: 3 });
+    const back = parseState(JSON.stringify(s));
+    expect(back.roundClock).toEqual(s.roundClock);
+  });
+
+  it("older saved data without a clock gets a fresh one", () => {
+    const raw = JSON.parse(JSON.stringify(createInitialState(NOW)));
+    delete raw.roundClock;
+    expect(parseState(raw).roundClock).toEqual({ startedAt: null, elapsedMs: 0, minutes: null, round: 1 });
   });
 });

@@ -171,21 +171,19 @@ function RoundBar({
           />
           {roundTabs}
         </div>
-        {!readOnly && (
-          <div className="flex flex-col items-stretch gap-3 sm:w-[380px] sm:shrink-0">
-            <RoundClock round={round} defaultMinutes={state.settings.matchMinutes[round - 1]} />
-            {closed ? (
-              <button className="btn-gray" onClick={() => dispatch({ type: "reopenRound", round })}>
-                {t.scoring.reopenRound(round)}
-              </button>
-            ) : (
-              <button className="btn-gray" onClick={() => setConfirming(true)} disabled={confirming}>
-                <Icon name="flag" className="h-[18px] w-[18px]" />
-                {t.scoring.closeRound(round)}
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex flex-col items-stretch gap-3 empty:hidden sm:w-[380px] sm:shrink-0">
+          <RoundClock state={state} round={round} readOnly={readOnly} />
+          {readOnly ? null : closed ? (
+            <button className="btn-gray" onClick={() => dispatch({ type: "reopenRound", round })}>
+              {t.scoring.reopenRound(round)}
+            </button>
+          ) : (
+            <button className="btn-gray" onClick={() => setConfirming(true)} disabled={confirming}>
+              <Icon name="flag" className="h-[18px] w-[18px]" />
+              {t.scoring.closeRound(round)}
+            </button>
+          )}
+        </div>
       </div>
       {confirming && !closed && (
         <Notice
@@ -319,7 +317,7 @@ function DuelView({
           <TeamTotal name={teamA?.name} score={total.a} isLead={lead === "a"} align="left" />
           <div className="flex flex-col items-center gap-1 text-center">
             <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">{t.scoring.duelTotal}</span>
-            <RoundClockBadge round={duel.round} defaultMinutes={state.settings.matchMinutes[duel.round - 1]} />
+            <RoundClockBadge state={state} round={duel.round} />
             {duel.closed ? (
               <span className="chip bg-white/15 !py-0.5 text-[11px] text-white">
                 <Icon name="check" className="h-3 w-3" />

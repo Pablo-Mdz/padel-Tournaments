@@ -2,6 +2,7 @@ import {
   Duel,
   GroupId,
   MATCH_TYPES,
+  RoundClock,
   Match,
   Player,
   RoundNo,
@@ -109,6 +110,7 @@ export function createInitialState(now = Date.now()): TournamentState {
     roundClosed: [false, false, false],
     round3Edited: false,
     manualOrder: {},
+    roundClock: freshRoundClock(1),
   };
   return applyGroupSchedule(state);
 }
@@ -202,4 +204,23 @@ export function timerElapsedMs(t: { startedAt: number | null; elapsedMs: number 
 export function activeRound(state: TournamentState): RoundNo {
   const idx = state.roundClosed.findIndex((c) => !c);
   return (idx === -1 ? 3 : idx + 1) as RoundNo;
+}
+
+export function freshRoundClock(round: RoundNo): RoundClock {
+  return { startedAt: null, elapsedMs: 0, minutes: null, round };
+}
+
+/** True once the round clock was started (running or paused with time on it). */
+export function roundClockTouched(c: RoundClock): boolean {
+  return c.startedAt != null || c.elapsedMs > 0;
+}
+
+/**
+ * Length of the round clock. An untouched clock follows the round on screen
+ * (15 min, round 3: 20 min) unless a length was picked by hand.
+ */
+export function roundClockMinutes(state: TournamentState, viewedRound?: RoundNo): number {
+  const c = state.roundClock;
+  const round = roundClockTouched(c) || viewedRound == null ? c.round : viewedRound;
+  return c.minutes ?? state.settings.matchMinutes[round - 1];
 }

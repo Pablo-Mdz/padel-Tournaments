@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
+import { RoundClockTV } from "../components/RoundClock";
 import StandingsTable from "../components/StandingsTable";
 import { Icon, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
@@ -93,7 +94,10 @@ export default function DisplayPage() {
             {state.settings.subtitle} · {state.settings.date}
           </div>
         </div>
-        <div className="ml-auto text-right leading-tight">
+        <div className="ml-auto">
+          <RoundClockTV state={state} />
+        </div>
+        <div className="text-right leading-tight">
           <div className="num text-[6vh]">{clock}</div>
           {item && <div className="text-[2.2vh] font-semibold text-yellow">{item.label}</div>}
         </div>
