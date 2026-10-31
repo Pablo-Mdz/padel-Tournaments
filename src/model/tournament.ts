@@ -46,7 +46,6 @@ export function emptyMatches(): Match[] {
     type,
     score: { a: 0, b: 0 },
     closed: false,
-    timer: { startedAt: null, elapsedMs: 0 },
   }));
 }
 
@@ -116,12 +115,7 @@ export function createInitialState(now = Date.now()): TournamentState {
 }
 
 export function duelHasStarted(d: Duel): boolean {
-  return (
-    d.closed ||
-    d.matches.some(
-      (m) => m.closed || m.score.a > 0 || m.score.b > 0 || m.timer.elapsedMs > 0 || m.timer.startedAt !== null,
-    )
-  );
+  return d.closed || d.matches.some((m) => m.closed || m.score.a > 0 || m.score.b > 0);
 }
 
 /**

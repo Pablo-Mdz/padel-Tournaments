@@ -92,27 +92,20 @@ describe("scoring", () => {
     expect(duelTotals(duelsOfRound(s, 1)[0])).toEqual({ a: 31, b: 30 });
   });
 
-  it("keeps accepting points after the timer ran out and after closing", () => {
+  it("keeps accepting points after a match is closed, so mistakes can be corrected", () => {
     let s = createInitialState(NOW);
     const id = duelId(s, 1, 0);
-    s = run(s, { type: "timerStart", duelId: id, matchIndex: 0 });
-    s = reducer(s, { type: "timerPause", duelId: id, matchIndex: 0 }, NOW + 20 * 60_000);
     s = run(s, { type: "closeMatch", duelId: id, matchIndex: 0 });
     s = run(s, { type: "addPoints", duelId: id, matchIndex: 0, side: "b", delta: 2 });
     const m = s.duels.find((d) => d.id === id)!.matches[0];
-    expect(m.timer.elapsedMs).toBe(20 * 60_000);
     expect(m.score.b).toBe(2);
     expect(m.closed).toBe(true);
   });
 
-  it("closing a match pauses its timer; reset clears it", () => {
-    let s = createInitialState(NOW);
-    const id = duelId(s, 1, 0);
-    s = run(s, { type: "timerStart", duelId: id, matchIndex: 1 });
-    s = reducer(s, { type: "closeMatch", duelId: id, matchIndex: 1 }, NOW + 5000);
-    expect(s.duels.find((d) => d.id === id)!.matches[1].timer).toEqual({ startedAt: null, elapsedMs: 5000 });
-    s = run(s, { type: "timerReset", duelId: id, matchIndex: 1 });
-    expect(s.duels.find((d) => d.id === id)!.matches[1].timer).toEqual({ startedAt: null, elapsedMs: 0 });
+  it("drops the per-match timer that older saved data still carries", () => {
+    const raw = JSON.parse(JSON.stringify(createInitialState(NOW)));
+    raw.duels[0].matches[0].timer = { startedAt: 123, elapsedMs: 5000 };
+    expect(parseState(raw).duels[0].matches[0]).not.toHaveProperty("timer");
   });
 
   it("bumps the revision on every change", () => {

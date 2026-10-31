@@ -62,15 +62,10 @@ export function parseState(raw: string | unknown): TournamentState {
       matches: base.map((_, i) => {
         const src = isObj(matches[i]) ? (matches[i] as Record<string, unknown>) : {};
         const score = isObj(src.score) ? src.score : {};
-        const timer = isObj(src.timer) ? src.timer : {};
         return {
           type: MATCH_TYPES[i],
           score: { a: Math.max(0, num(score.a)), b: Math.max(0, num(score.b)) },
           closed: src.closed === true,
-          timer: {
-            startedAt: typeof timer.startedAt === "number" ? timer.startedAt : null,
-            elapsedMs: num(timer.elapsedMs),
-          },
         };
       }),
     };

@@ -2,29 +2,25 @@ import { CSSProperties } from "react";
 import { t } from "../i18n/texts";
 import { courtLabelNumber, currentMatchIndex, duelTotals, leader, teamById } from "../model/tournament";
 import { Duel, TournamentState } from "../model/types";
-import { timerInfo } from "./MatchTimer";
 import { Icon, Num } from "./ui";
 
 interface Props {
   state: TournamentState;
   duel: Duel;
-  now: number;
   onOpen?: () => void;
   /** TV screen: sized to the viewport, dark glass. */
   big?: boolean;
   style?: CSSProperties;
 }
 
-/** Scoreboard for one court: both teams, the duel total, the running match and its clock. */
-export default function CourtCard({ state, duel, now, onOpen, big, style }: Props) {
+/** Scoreboard for one court: both teams, the duel total and the match being played. */
+export default function CourtCard({ state, duel, onOpen, big, style }: Props) {
   const total = duelTotals(duel);
   const lead = leader(total);
   const a = teamById(state, duel.teamA);
   const b = teamById(state, duel.teamB);
   const idx = currentMatchIndex(duel);
   const match = idx >= 0 && !duel.closed ? duel.matches[idx] : null;
-  const minutes = state.settings.matchMinutes[duel.round - 1];
-  const clock = match ? timerInfo(match.timer, minutes, now) : null;
   const started = duel.closed || duel.matches.some((m) => m.closed || m.score.a + m.score.b > 0);
 
   const status = duel.closed ? (
@@ -36,11 +32,6 @@ export default function CourtCard({ state, duel, now, onOpen, big, style }: Prop
     <span className={`chip bg-yellow text-navy ${big ? "!text-[2.2vh]" : ""}`}>
       {started && <span className="live-dot bg-navy text-navy/40" />}
       {t.matchTypes[match.type]}
-      {clock && (clock.running || match.timer.elapsedMs > 0) && (
-        <span className={`num ${clock.phase === "over" ? "text-bad" : "text-navy"} ${clock.running && clock.phase !== "running" ? "blink" : ""}`}>
-          {clock.label}
-        </span>
-      )}
     </span>
   ) : null;
 

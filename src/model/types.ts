@@ -26,18 +26,10 @@ export interface Team {
   players: Player[];
 }
 
-export interface Timer {
-  /** Timestamp (ms) since the clock is running; `null` = paused/stopped. */
-  startedAt: number | null;
-  /** Time already elapsed before the last start (ms). */
-  elapsedMs: number;
-}
-
 export interface Match {
   type: MatchType;
   score: { a: number; b: number };
   closed: boolean;
-  timer: Timer;
 }
 
 export interface Duel {

@@ -20,9 +20,6 @@ export type Action =
   | { type: "updateSettings"; settings: Partial<Settings> }
   | { type: "addPoints"; duelId: string; matchIndex: number; side: Side; delta: number }
   | { type: "setScore"; duelId: string; matchIndex: number; a: number; b: number }
-  | { type: "timerStart"; duelId: string; matchIndex: number }
-  | { type: "timerPause"; duelId: string; matchIndex: number }
-  | { type: "timerReset"; duelId: string; matchIndex: number }
   | { type: "closeMatch"; duelId: string; matchIndex: number }
   | { type: "reopenMatch"; duelId: string; matchIndex: number }
   | { type: "closeDuel"; duelId: string }
@@ -50,11 +47,6 @@ function mapMatch(state: TournamentState, id: string, i: number, fn: (m: Match, 
     ...d,
     matches: d.matches.map((m, j) => (j === i ? fn(m, d) : m)),
   }));
-}
-
-function pauseTimer(m: Match, now: number): Match {
-  if (m.timer.startedAt == null) return m;
-  return { ...m, timer: { startedAt: null, elapsedMs: m.timer.elapsedMs + Math.max(0, now - m.timer.startedAt) } };
 }
 
 const clampScore = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0);
@@ -122,22 +114,8 @@ function apply(state: TournamentState, action: Action, now: number): TournamentS
         score: { a: clampScore(action.a), b: clampScore(action.b) },
       }));
 
-    case "timerStart":
-      return mapMatch(state, action.duelId, action.matchIndex, (m) =>
-        m.timer.startedAt != null ? m : { ...m, timer: { ...m.timer, startedAt: now } },
-      );
-
-    case "timerPause":
-      return mapMatch(state, action.duelId, action.matchIndex, (m) => pauseTimer(m, now));
-
-    case "timerReset":
-      return mapMatch(state, action.duelId, action.matchIndex, (m) => ({
-        ...m,
-        timer: { startedAt: null, elapsedMs: 0 },
-      }));
-
     case "closeMatch":
-      return mapMatch(state, action.duelId, action.matchIndex, (m) => ({ ...pauseTimer(m, now), closed: true }));
+      return mapMatch(state, action.duelId, action.matchIndex, (m) => ({ ...m, closed: true }));
 
     case "reopenMatch":
       return mapDuel(state, action.duelId, (d) => ({
@@ -150,7 +128,7 @@ function apply(state: TournamentState, action: Action, now: number): TournamentS
       return mapDuel(state, action.duelId, (d) => ({
         ...d,
         closed: true,
-        matches: d.matches.map((m) => ({ ...pauseTimer(m, now), closed: true })),
+        matches: d.matches.map((m) => ({ ...m, closed: true })),
       }));
 
     case "reopenDuel":
@@ -166,7 +144,7 @@ function apply(state: TournamentState, action: Action, now: number): TournamentS
       const duels = state.duels.map((d) =>
         d.round !== r || d.closed
           ? d
-          : { ...d, closed: true, matches: d.matches.map((m) => ({ ...pauseTimer(m, now), closed: true })) },
+          : { ...d, closed: true, matches: d.matches.map((m) => ({ ...m, closed: true })) },
       );
       return { ...state, roundClosed, duels };
     }

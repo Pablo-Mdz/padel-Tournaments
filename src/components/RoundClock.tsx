@@ -5,7 +5,7 @@ import { RoundNo, TournamentState } from "../model/types";
 import { useNow } from "../store/hooks";
 import { takeLegacyClock } from "../store/roundClock";
 import { dispatch } from "../store/store";
-import { timerInfo } from "./MatchTimer";
+import { timerInfo } from "./clock";
 import { Icon, Segmented } from "./ui";
 
 const LENGTHS = [15, 20];

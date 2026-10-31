@@ -68,7 +68,6 @@ export const t = {
     finalHint: "After each match, type the total points each team reports, then tap Save. You can change a number at any time.",
     save: "Save",
     saved: "Saved",
-    clockFor: "Clock ·",
     otherCourts: "Switch court",
     pickCourt: "Tap a court to enter its points.",
     enterPoints: "Enter points",

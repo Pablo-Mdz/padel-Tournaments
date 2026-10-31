@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
-import MatchTimer from "../components/MatchTimer";
 import RoundClock, { RoundClockBadge } from "../components/RoundClock";
 import { Icon, Notice, Num, PageTitle, Segmented, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
@@ -18,7 +17,7 @@ import {
 } from "../model/tournament";
 import { Duel, ROUNDS, RoundNo, Side, TournamentState } from "../model/types";
 import { historyCourt, pushHistory } from "../router";
-import { useNow, useSessionState } from "../store/hooks";
+import { useSessionState } from "../store/hooks";
 import { dispatch, useReadOnly, useTournament } from "../store/store";
 
 /** true while the open court was pushed onto the history by this tab, so "back" can pop it. */
@@ -52,7 +51,6 @@ export default function ScoringPage() {
     rememberCourt(i);
     setCourtIndexState(i);
   };
-  const now = useNow(500);
   const duels = duelsOfRound(state, round);
   const readOnly = useReadOnly();
   const openDuel = !readOnly && courtIndex != null ? duels[courtIndex] : undefined;
@@ -110,7 +108,6 @@ export default function ScoringPage() {
             key={d.id}
             state={state}
             duel={d}
-            now={now}
             style={stagger(i, 60)}
             onOpen={readOnly ? undefined : () => openCourt(d.courtIndex)}
           />
@@ -462,12 +459,9 @@ function FinalEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
   const teamB = teamById(state, duel.teamB);
   const running = currentMatchIndex(duel);
   const allSaved = running === -1;
-  const minutes = state.settings.matchMinutes[duel.round - 1];
-  const clockIndex = running >= 0 ? running : 3;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
-      <div className="card flex flex-col p-2 sm:p-3">
+    <div className="card flex flex-col p-2 sm:p-3">
         <p className="px-2 pb-2 pt-1 text-[14px] text-ink2">{duel.walkover ? t.scoring.walkoverHint : t.scoring.finalHint}</p>
         <div className={`${ROW} pb-1`}>
           <span />
@@ -492,15 +486,6 @@ function FinalEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
             {t.scoring.closeDuel}
           </button>
         )}
-      </div>
-      <MatchTimer
-        title={`${t.scoring.clockFor} ${t.matchTypes[duel.matches[clockIndex].type]}`}
-        timer={duel.matches[clockIndex].timer}
-        minutes={minutes}
-        onStart={() => dispatch({ type: "timerStart", duelId: duel.id, matchIndex: clockIndex })}
-        onPause={() => dispatch({ type: "timerPause", duelId: duel.id, matchIndex: clockIndex })}
-        onReset={() => dispatch({ type: "timerReset", duelId: duel.id, matchIndex: clockIndex })}
-      />
     </div>
   );
 }
@@ -579,7 +564,6 @@ function LiveEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
   const teamA = teamById(state, duel.teamA);
   const teamB = teamById(state, duel.teamB);
   const matchLead = leader(match.score);
-  const minutes = state.settings.matchMinutes[duel.round - 1];
   const ids = { duelId: duel.id, matchIndex: selected };
 
   const closeMatch = () => {
@@ -632,16 +616,6 @@ function LiveEntry({ state, duel }: { state: TournamentState; duel: Duel }) {
           onAdd={(delta) => dispatch({ type: "addPoints", ...ids, side: "a", delta })}
         />
         <div className="order-first flex flex-col gap-3 md:order-none">
-          <MatchTimer
-            title={`${t.matchTypes[match.type]} · ${
-              match.closed ? t.scoring.closed : selected === running ? t.scoring.running : t.scoring.upcoming
-            }`}
-            timer={match.timer}
-            minutes={minutes}
-            onStart={() => dispatch({ type: "timerStart", ...ids })}
-            onPause={() => dispatch({ type: "timerPause", ...ids })}
-            onReset={() => dispatch({ type: "timerReset", ...ids })}
-          />
           {match.closed ? (
             <button className="btn-gray min-h-[52px]" onClick={() => dispatch({ type: "reopenMatch", ...ids })}>
               {t.scoring.reopenMatch}

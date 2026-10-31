@@ -134,7 +134,7 @@ export default function DisplayPage() {
         {kind === "live" && (
           <div className="grid h-full grid-cols-2 grid-rows-2 gap-[1.6vw]">
             {duelsOfRound(state, round).map((d, i) => (
-              <CourtCard key={d.id} state={state} duel={d} now={now} big style={stagger(i, 90)} />
+              <CourtCard key={d.id} state={state} duel={d} big style={stagger(i, 90)} />
             ))}
           </div>
         )}
