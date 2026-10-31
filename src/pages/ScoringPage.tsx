@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import CourtCard from "../components/CourtCard";
 import MatchTimer from "../components/MatchTimer";
+import RoundClock, { RoundClockBadge } from "../components/RoundClock";
 import { Icon, Notice, Num, PageTitle, Segmented, stagger } from "../components/ui";
 import { t } from "../i18n/texts";
 import { round3Pairings } from "../model/standings";
@@ -140,39 +141,52 @@ function RoundBar({
     if (round < 3) setRound((round + 1) as RoundNo);
   };
 
+  const roundTabs = (
+    <Segmented<RoundNo>
+      label={t.round(round)}
+      size="lg"
+      className="w-full sm:max-w-[480px]"
+      value={round}
+      onChange={setRound}
+      options={ROUNDS.map((r) => ({
+        value: r,
+        label: (
+          <>
+            {t.round(r)}
+            {state.roundClosed[r - 1] && <Icon name="check" className="h-4 w-4 text-good" label={t.scoring.roundClosed} />}
+          </>
+        ),
+      }))}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <PageTitle
-        title={t.nav.scoring}
-        subtitle={`${t.round(round)} · ${state.settings.matchMinutes[round - 1]} min${closed ? ` · ${t.scoring.roundClosed}` : ""}`}
-      >
-        {readOnly ? null : closed ? (
-          <button className="btn-gray" onClick={() => dispatch({ type: "reopenRound", round })}>
-            {t.scoring.reopenRound(round)}
-          </button>
-        ) : (
-          <button className="btn-gray" onClick={() => setConfirming(true)} disabled={confirming}>
-            <Icon name="flag" className="h-[18px] w-[18px]" />
-            {t.scoring.closeRound(round)}
-          </button>
+      {/* Title and rounds on the left; the round clock with "Close round" right under it on the right */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <PageTitle
+            title={t.nav.scoring}
+            subtitle={`${t.round(round)} · ${state.settings.matchMinutes[round - 1]} min${closed ? ` · ${t.scoring.roundClosed}` : ""}`}
+          />
+          {roundTabs}
+        </div>
+        {!readOnly && (
+          <div className="flex flex-col items-stretch gap-3 sm:w-[380px] sm:shrink-0">
+            <RoundClock round={round} defaultMinutes={state.settings.matchMinutes[round - 1]} />
+            {closed ? (
+              <button className="btn-gray" onClick={() => dispatch({ type: "reopenRound", round })}>
+                {t.scoring.reopenRound(round)}
+              </button>
+            ) : (
+              <button className="btn-gray" onClick={() => setConfirming(true)} disabled={confirming}>
+                <Icon name="flag" className="h-[18px] w-[18px]" />
+                {t.scoring.closeRound(round)}
+              </button>
+            )}
+          </div>
         )}
-      </PageTitle>
-      <Segmented<RoundNo>
-        label={t.round(round)}
-        size="lg"
-        className="w-full sm:max-w-[480px]"
-        value={round}
-        onChange={setRound}
-        options={ROUNDS.map((r) => ({
-          value: r,
-          label: (
-            <>
-              {t.round(r)}
-              {state.roundClosed[r - 1] && <Icon name="check" className="h-4 w-4 text-good" label={t.scoring.roundClosed} />}
-            </>
-          ),
-        }))}
-      />
+      </div>
       {confirming && !closed && (
         <Notice
           tone="warn"
@@ -305,6 +319,7 @@ function DuelView({
           <TeamTotal name={teamA?.name} score={total.a} isLead={lead === "a"} align="left" />
           <div className="flex flex-col items-center gap-1 text-center">
             <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">{t.scoring.duelTotal}</span>
+            <RoundClockBadge round={duel.round} defaultMinutes={state.settings.matchMinutes[duel.round - 1]} />
             {duel.closed ? (
               <span className="chip bg-white/15 !py-0.5 text-[11px] text-white">
                 <Icon name="check" className="h-3 w-3" />

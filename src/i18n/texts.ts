@@ -85,6 +85,9 @@ export const t = {
     reset: "Reset",
     overtime: "Time is up",
     twoMinutes: "2 minutes left",
+    roundClock: "Round clock",
+    length: "Match length",
+    minutes: (n: number) => `${n} min`,
   },
 
   round3: {
