@@ -3,7 +3,7 @@
 Live scoring app for a team padel tournament. A tablet enters the points,
 players follow the standings on their phones and a TV shows `/display`.
 
-Built for the 4PADEL Berlin team tournament on Saturday 31.10.2026 (12:00–16:00),
+Built for the 4PADEL Berlin team tournaments,
 and reusable for any other tournament: the teams, date, courts and match length
 are all set in the app.
 
